@@ -1,6 +1,8 @@
-from django.urls import path
+from django.contrib import admin
+from django.urls import path, include
 from . import views
 
 urlpatterns = [
-    # adicione suas rotas reais aqui depois
+path('admin/', admin.site.urls),
+    path('',include('loja.urls')),
 ]
