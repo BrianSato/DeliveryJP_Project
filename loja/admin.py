@@ -42,18 +42,15 @@ class ItemPedidoInline(admin.TabularInline):
         'nome_produto',
         'tipo',
         'quantidade',
-        'valor_unitario_formatado',
-        'valor_pago_formatado',
-        'data_limite_formatada',
-        'status_pagamento_colorido',
-        'status_item_colorido',
-        'forma_pagamento',)
+        'forma_pagamento',
+        'valor_pago',
+    )
 
     readonly_fields = (
         'valor_unitario_formatado',
         'valor_pago_formatado',
-        'forma_pagamento',
         'status_pagamento_colorido',
+        'data_limite_formatada',
         'status_item_colorido',)
 
     can_delete = True
@@ -119,6 +116,7 @@ class PedidoAdmin(admin.ModelAdmin):
             'cliente',
             'data_pedido',
         )
+
     def data_pedido_formatada(self,obj):
         if obj.data_pedido:
             return obj.data_pedido.strftime('%d/%m/%Y')

@@ -1,3 +1,5 @@
+from xml.etree.ElementInclude import default_loader
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from datetime import date, timedelta
@@ -155,8 +157,8 @@ class ItemPedido(models.Model):
     produto = models.ForeignKey(Produto,on_delete=models.SET_NULL,null=True,blank=True,related_name='itens_pedido')
     nome_produto = models.CharField(max_length=100, null=True,blank=True)
     tipo = models.CharField(max_length=15,choices=TIPO_VENDA)
-    quantidade = models.IntegerField()
-    valor_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    quantidade = models.IntegerField(default=0)
+    valor_unitario = models.DecimalField(max_digits=10, decimal_places=2,default=0)
     valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status_pagamento = models.CharField(max_length=15,choices=STATUS_PAGAMENTO,default='AGUARDANDO')
     status_item = models.CharField(max_length=15,choices=STATUS_ITEM,default='PENDENTE')
@@ -164,7 +166,7 @@ class ItemPedido(models.Model):
     data_limite_pagamento = models.DateField(null=True, blank=True)
 
     def valor_total_item(self):
-        return self.valor_unitario * self.quantidade
+        return self.valor_unitario + self.valor_pago
 
     def clean(self):
         # Precisa de pelo menos um dos campos prenchido (produto ou nome_produto)
@@ -184,6 +186,56 @@ class ItemPedido(models.Model):
         if self.status_item in ['ENVIADO','ENTREGUE'] and valor_pago < valor_total :
             raise ValidationError('Só é possível enviar após pagamento total')
 
+    def save(self,*args,**kwargs):
+
+        valor_total = self.valor_total_item() or 0
+        valor_pago = self.valor_pago or 0
+        status_anterior = None
+        item_antigo = None
+
+        if self.pk:
+            try:
+                item_antigo = ItemPedido.objects.get(pk=self.pk)
+                status_anterior = item_antigo.status_pagamento
+            except ItemPedido.DoesNotExist:
+                pass
+
+        # atualiza status automaticamente e impôem data limite de pagamento
+        # AGUARDANDO
+        if valor_pago <= 0:
+            self.status_pagamento = 'AGUARDANDO'
+            if status_anterior != 'AGUARDANDO':
+                self.data_limite_pagamento = date.today() + timedelta(days=1)
+        # PARCIALMENTE PAGO
+        elif valor_pago < valor_total:
+            self.status_pagamento = 'PARCIAL'
+            if status_anterior != 'PARCIAL':
+                self.data_limite_pagamento = date.today() + timedelta(days=5)
+        # TOTALMENTE PAGO
+        else:
+            self.status_pagamento = 'PAGO'
+            self.data_limite_pagamento = None
+        # CANCELAMENTO AUTOMÁTICO
+        if (
+                self.data_limite_pagamento and
+                date.today() > self.data_limite_pagamento and
+                self.status_item != 'CANCELADO'
+        ):
+            self.status_item = 'CANCELADO'
+        # RETORNO AO ESTOQUE
+        if (
+                item_antigo and
+                item_antigo.status_item != 'CANCELADO' and
+                self.status_item == 'CANCELADO' and
+                self.tipo == 'ESTOQUE' and
+                self.produto and
+                self.quantidade
+        ):
+            LoteProduto.objects.create(
+                produto=self.produto,
+                quantidade=self.quantidade,
+            )
+        super().save(*args,**kwargs)
     def __str__(self):
         if self.produto:
             return f'{self.produto.nome_produto} - {self.quantidade}'
