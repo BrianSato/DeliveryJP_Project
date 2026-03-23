@@ -80,11 +80,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL'),
-    )
-}
+#----Configuração do banco local via SQLite (apenas para testes)---
+if os.environ.get('USE_LOCAL_DB') == '1':
+    print('USANDO SQLITE')
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+#---Configuração padrão ( Railway )---
+else:
+    print('USANDO RAILWAY')
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+        )
+    }
 
 
 # Password validation

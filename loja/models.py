@@ -12,14 +12,40 @@ class Cliente(models.Model):
     data_cadastro = models.DateField(auto_now_add=True)
 
     @property
-    def saldo_devedor(self):
-        vendas = Venda.objects.filter(
-            cliente=self,
-            status__in=['PENDENTE','PARCIAL']
-        )
-        total = sum(v.valor_total - v.valor_pago for v in vendas)
+    def proxima_data_limite(self):
+        #Pega todos os pedidos do cliente
+        item = ItemPedido.objects.filter(
+            pedido__cliente=self,
+            data_limite_pagamento__isnull=False,
+            status_item__in=['PENDENTE','PEDIDO','CHEGOU','ENVIADO','ENTREGUE','CANCELADO']
+        ).order_by('data_limite_pagamento').first()
 
-        return total
+        return item.data_limite_pagamento if item else None
+
+    @property
+    def saldo_devedor(self):
+        itens = ItemPedido.objects.filter(
+            pedido__cliente = self,
+            status_pagamento__in=['PENDENTE','PARCIAL']
+        ).order_by('status_pagamento')
+
+        return sum(i.valor_total_item() - (i.valor_pago or 0) for i in itens)
+
+    @property
+    def total_gasto(self):
+        itens = ItemPedido.objects.filter(
+            pedido__cliente = self,
+            status_pagamento = 'PAGO'
+        )
+        return sum(i.valor_total_item() for i in itens)
+
+    @property
+    def tem_atraso(self):
+        return ItemPedido.objects.filter(
+            pedido__cliente = self,
+            data_limite_pagamento__lt=date.today(),
+            status_pagamento__in=['AGUARDANDO','PARCIAL']
+        ).exists()
 
     def __str__(self):
         return self.nome
@@ -34,8 +60,9 @@ class Produto(models.Model):
         return sum(lote.quantidade for lote in self.loteproduto_set.all())
 
     def total_encomendados(self):
-        return self.encomenda_set.filter(
-            status__in=['PEDIDO','ENVIADO','CHEGOU','ENTREGUE']
+        return self.itens_pedido.filter(
+            tipo='ENCOMENDA',
+            status_item__in=['PEDIDO','ENVIADO','CHEGOU','ENTREGUE']
         ).aggregate(
             total=models.Sum('quantidade')
         )['total'] or 0
@@ -85,208 +112,82 @@ class LoteProduto(models.Model):
     def __str__(self):
         return f'{self.produto} - {self.quantidade} unidades - Validade: {self.data_validade}'
 
-class Encomenda(models.Model):
-    STATUS_PAGAMENTO =[
-        ('AGUARDANDO','Aguardando pagamento inicial'),
-        ('PARCIAL', 'Pagamento parcial feito'),
-        ('PAGO', '100% pago'),
-    ]
-    STATUS_ENCOMENDA = [
-        ('PENDENTE','Aguardando Pedido'),
-        ('PEDIDO','Pedido feito'),
-        ('CHEGOU', 'Produto chegou'),
-        ('ENVIADO','Enviado'),
-        ('ENTREGUE', 'Entregue ao cliente'),
-        ('CANCELADO','Cancelado')
-    ]
+class Pedido(models.Model):
+
     cliente = models.ForeignKey(Cliente,on_delete=models.CASCADE)
-    produto = models.ForeignKey(Produto,on_delete=models.CASCADE)
-    quantidade = models.PositiveIntegerField()
-    valor_total = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-    valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    data_pedido = models.DateField(auto_now_add=True)
 
-    status_pagamento = models.CharField(max_length=20,choices=STATUS_PAGAMENTO,default='AGUARDANDO')
-    status = models.CharField(max_length=20,choices=STATUS_ENCOMENDA,default='PENDENTE')
+    def atualizar_valor_total(self):
+        return sum(item.valor_total_item() for item in self.itens.all())
 
-    data_encomenda = models.DateField(auto_now_add=True)
-    data_limite_pagamento = models.DateField(null=True, blank=True)
-
-    def clean(self):
-        valor_total = self.valor_total or (self.produto.preco_unitario * self.quantidade)
-        valor_pago = self. valor_pago or 0
-
-        #Vvalor pago não pode ser maior que o total
-        if valor_pago > valor_total:
-            raise ValidationError('O valor pago não pode ser maior que o total')
-        #não pode fazer pedido sem pagamento
-        if self.status != 'PENDENTE' and valor_pago == 0:
-            raise ValidationError('Não é possível fazer o pedido sem pagamento')
-        #não pode enviar sem pagamento total:
-        if self.status == 'ENVIADO' or self.status == 'ENTREGUE' and valor_pago < valor_total:
-            raise ValidationError('Só é possível enviar após pagamento total')
-
-    def save(self,*args,**kwargs):
-        self.valor_total = self.produto.preco_unitario * self.quantidade
-        valor_pago = self.valor_pago or 0
-        valor_total = self.valor_total or 0
-        status_anterior = None
-        encomenda_antiga = None
-
-        if self.pk:
-            encomenda_antiga = Encomenda.objects.get(pk=self.pk)
-            status_anterior = encomenda_antiga.status_pagamento
-
-        #atualiza status automaticamente e impôem data limite de pagamento
-        #AGUARDANDO
-        if valor_pago <= 0:
-            self.status_pagamento = 'AGUARDANDO'
-            if status_anterior != 'AGUARDANDO':
-                self.data_limite_pagamento = date.today() + timedelta(days=1)
-        #PARCIALMENTE PAGO
-        elif valor_pago < valor_total:
-            self.status_pagamento = 'PARCIAL'
-            if status_anterior != 'PARCIAL':
-                self.data_limite_pagamento = date.today() + timedelta(days=5)
-        #TOTALMENTE PAGO
-        else:
-            self.status_pagamento = 'PAGO'
-            self.data_limite_pagamento = None
-        #CANCELAMENTO AUTOMÁTICO
-        if (
-            self.data_limite_pagamento and
-            date.today() > self.data_limite_pagamento and
-            self.status != 'CANCELADO'
-        ):
-            self.status = 'CANCELADO'
-        #RETORNO AO ESTOQUE
-        if (
-            encomenda_antiga and
-            encomenda_antiga.status != 'CANCELADO' and
-            self.status == 'CANCELADO'
-        ):
-            LoteProduto.objects.create(
-                produto=self.produto,
-                quantidade=self.quantidade,
-            )
-        super().save(*args, **kwargs)
+    def valor_pago_total(self):
+        return sum(item.valor_pago for item in self.itens.all())
 
     def __str__(self):
-        return f'{self.cliente} - {self.produto.nome_produto}'
+        return f'Pedido:{self.cliente}'
 
-class Venda(models.Model):
-    TIPO_VENDA = [
-        ('ESTOQUE', 'Em Estoque'),
-        ('ENCOMENDA', 'Encomenda')
+class ItemPedido(models.Model):
+    TIPO_VENDA=[
+        ('ESTOQUE','Estoque'),
+        ('ENCOMENDA','Encomenda') ,
     ]
-    STATUS = [
-        ('PENDENTE', 'Pendente'),
-        ('PAGO', 'Pago'),
-        ('PARCIAL', 'Pago parcialmente'),
+    STATUS_PAGAMENTO = [
+        ('AGUARDANDO', 'Aguardando pagamento inicial'),
+        ('PARCIAL', 'Pagamento parcial feito'),
+        ('PAGO', '100% pago'),
         ('CANCELADO', 'Cancelado'),
+    ]
+    STATUS_ITEM = [
+        ('PENDENTE', 'Aguardando Pedido'),
+        ('PEDIDO', 'Pedido feito'),
+        ('CHEGOU', 'Produto chegou'),
+        ('ENVIADO', 'Enviado'),
+        ('ENTREGUE', 'Entregue ao cliente'),
+        ('CANCELADO', 'Cancelado')
     ]
     FORMA_PAGAMENTO = [
         ('DINHEIRO', 'Dinheiro'),
-        ('CARTAO', 'Cartao'),
-        ('TRANSFERENCIA', 'Transferencia'),
+        ('CARTAO', 'Cartão'),
+        ('TRANSFERENCIA', 'Transferência'),
     ]
 
-    cliente = models.ForeignKey(Cliente,on_delete=models.CASCADE)
-    data_venda = models.DateField(auto_now_add=True)
-    valor_total = models.DecimalField(max_digits=10,decimal_places=2,default=0)
-    valor_pago = models.DecimalField(max_digits=10,decimal_places=2,default=0)
-    forma_pagamento = models.CharField(max_length=20, choices=FORMA_PAGAMENTO, default='DINHEIRO')
-    data_limite_pagamento = models.DateField(verbose_name='Data limite de pagamento',null=False,blank=False)
-    status = models.CharField(max_length=20,choices=STATUS,default='PENDENTE')
-    tipo_venda = models.CharField(max_length=20,choices=TIPO_VENDA,default='ESTOQUE')
-
-    def atualizar_valor_total(self):
-        total = sum(item.subtotal for item in self.itemvenda_set.all())
-        self.valor_total = total
-        self.save()
-
-    def atualizar_status_pagamento(self):
-        if self.valor_pago == 0 and self.data_limite_pagamento < date.today():
-            self.status = 'CANCELADO'
-        elif self.valor_pago == 0:
-            self.status = 'PENDENTE'
-        elif self.valor_pago < self.valor_total:
-            self.status = 'PARCIAL'
-        elif self.valor_pago >= self.valor_total:
-            self.status = 'PAGO'
-
-    def save(self,*args,**kwargs):
-        self.atualizar_status_pagamento()
-        super().save(*args,**kwargs)
-
-    def __str__(self):
-        return f'{self.cliente} - {self.data_venda}'
-
-class ItemVenda(models.Model):
-    venda = models.ForeignKey(Venda,on_delete=models.CASCADE)
-    produto = models.ForeignKey(Produto,on_delete=models.CASCADE)
-
+    pedido = models.ForeignKey(Pedido,on_delete=models.CASCADE,related_name='itens')
+    produto = models.ForeignKey(Produto,on_delete=models.SET_NULL,null=True,blank=True,related_name='itens_pedido')
+    nome_produto = models.CharField(max_length=100, null=True,blank=True)
+    tipo = models.CharField(max_length=15,choices=TIPO_VENDA)
     quantidade = models.IntegerField()
-    preco_unitario = models.DecimalField(max_digits=10,decimal_places=2)
-    subtotal = models.DecimalField(max_digits=10,decimal_places=2)
+    valor_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    status_pagamento = models.CharField(max_length=15,choices=STATUS_PAGAMENTO,default='AGUARDANDO')
+    status_item = models.CharField(max_length=15,choices=STATUS_ITEM,default='PENDENTE')
+    forma_pagamento = models.CharField(max_length=15,choices=FORMA_PAGAMENTO,null=True,blank=True)
+    data_limite_pagamento = models.DateField(null=True, blank=True)
+
+    def valor_total_item(self):
+        return self.valor_unitario * self.quantidade
 
     def clean(self):
-        #se não houver selecionado nenhum produto
-        if not self.produto:
-            raise ValidationError('Selecione um produto')
-        #se não houve quantidade suficiente no estoque
-        if self.quantidade > self.produto.estoque_total:
-            raise ValidationError(
-                f'Estoque insuficiente para {self.produto.nome_produto}'
-                f'Estoque disponível:{self.produto.estoque_total}'
-            )
+        # Precisa de pelo menos um dos campos prenchido (produto ou nome_produto)
+        if not self.produto and not self.nome_produto:
+            raise ValidationError('Informe um produto ou nome do produto')
 
-    def save(self,*args,**kwargs):
-        #preencher automaticamente
-        self.preco_unitario = self.produto.preco_unitario
-        #calcula subtotal
-        self.subtotal = self.quantidade * self.preco_unitario
+        valor_total = self.valor_total_item()
+        valor_pago = self.valor_pago or 0
 
-        #atualiza estoque dos lotes automaticamente(FIFO)
-        qnt_a_retirar = self.quantidade
-        lotes = LoteProduto.objects.filter(produto=self.produto).order_by('data_validade')
-        for lote in lotes:
-            if qnt_a_retirar <= 0:
-                break
-            if lote.quantidade >= qnt_a_retirar:
-                lote.quantidade -= qnt_a_retirar
-                lote.save()
-                qnt_a_retirar = 0
-            else:
-                qnt_a_retirar -= lote.quantidade
-                lote.quantidade = 0
-                lote.save()
-
-        super().save(*args,**kwargs)
-        #atualizad valor total da venda
-        self.venda.atualizar_valor_total()
-        #atualiza os status da venda baseado no pagamento
-        self.venda.atualizar_status_pagamento()
+        # Valor pago não pode ser maior que o total
+        if valor_pago > valor_total:
+            raise ValidationError('O valor pago não pode ser maior que o total')
+        # não pode fazer pedido sem pagamento
+        if self.tipo == 'ENCOMENDA' and self.status_item != 'PENDENTE' and valor_pago == 0:
+            raise ValidationError('Não é possível fazer o pedido sem pagamento')
+        # não pode enviar sem pagamento total:
+        if self.status_item in ['ENVIADO','ENTREGUE'] and valor_pago < valor_total :
+            raise ValidationError('Só é possível enviar após pagamento total')
 
     def __str__(self):
-        return f'{self.produto} - {self.quantidade}'
+        if self.produto:
+            return f'{self.produto.nome_produto} - {self.quantidade}'
+        return f'{self.nome_produto} ({self.quantidade}x)'
 
-class Pagamento(models.Model):
-    venda = models.OneToOneField(Venda,on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f'{self.venda.cliente.nome} - {self.venda.status} - {self.venda.forma_pagamento}'
-
-    @property
-    def status(self):
-        return self.venda.status
-    @property
-    def forma_pagamento(self):
-        return self.venda.forma_pagamento
-    @property
-    def valor_total(self):
-        return self.venda.valor_total
-    @property
-    def data_limite_pagamento(self):
-        return self.venda.data_limite_pagamento
 
 
