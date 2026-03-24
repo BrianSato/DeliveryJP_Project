@@ -6,6 +6,8 @@ from django.utils.html import mark_safe
 from .models import Cliente, Produto, LoteProduto,Pedido, ItemPedido
 from loja.utils import formatar_iene
 
+#===================== CLIENTES =========================
+
 class ClienteAdmin(admin.ModelAdmin):
     list_display = (
         'nome',
@@ -33,6 +35,8 @@ class ClienteAdmin(admin.ModelAdmin):
             return mark_safe('<span style= "color:red;font-weight:bold;"> ⚠️ Atrasado</span>')
         return 'OK'
     tem_atraso_colorido.short_description = 'Situação'
+
+#===================== ITEM PEDIDO =========================
 
 class ItemPedidoInline(admin.TabularInline):
     model = ItemPedido
@@ -100,6 +104,8 @@ class ItemPedidoInline(admin.TabularInline):
             ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
+#===================== PEDIDO ========================
+
 class PedidoAdmin(admin.ModelAdmin):
     inlines = [ItemPedidoInline]
     list_display = (
@@ -129,6 +135,8 @@ class PedidoAdmin(admin.ModelAdmin):
         return formatar_iene(obj.valor_pago_total())
     valor_pago_formatado.short_description = 'Valor Pago'
 
+#===================== LOTE PRODUTO =========================
+
 class LoteProdutoInline(admin.TabularInline):
     model = LoteProduto
     extra = 0
@@ -153,6 +161,8 @@ class LoteProdutoInline(admin.TabularInline):
 
     class Media:
         js = ('loja/js/validade_alerta.js',)
+
+#===================== PRODUTO =========================
 
 class ProdutoAdmin(admin.ModelAdmin):
     list_display = (

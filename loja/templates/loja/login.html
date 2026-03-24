@@ -1,0 +1,10 @@
+{% extends "loja/base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+    <form method="post" style="width:100%; max-width:300px;">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="Usuário" style="width: 100%; padding: 10px;margin-bottom: 10px">
+        <input type="password" name="password"  placeholder="Senha" style="width: 100%; padding: 10px;margin-bottom: 15px">
+        <button type="submit" class="menu-btn">Entrar</button>
+    </form>
+{% endblock %}

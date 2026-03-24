@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.conf.global_settings import LOGIN_REDIRECT_URL
 from dotenv import load_dotenv
 
 load_dotenv()#lê as variáveis do .env
@@ -134,8 +135,18 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 
-STATIC_URL = '/static/'
+
 
 STATIC_ROOT = os.path.join(BASE_DIR,'staticfiles')
 
 STATIC_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+LOGIN_REDIRECT_URL = '/cliente/'
+
+LOGIN_URL = '/login'
+
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]

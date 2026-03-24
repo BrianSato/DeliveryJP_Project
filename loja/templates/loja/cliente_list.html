@@ -1,0 +1,27 @@
+{% extends "loja/base.html" %}
+
+{% block title %}Clientes{% endblock %}
+
+{% block content %}
+    <!--- BUSCA --->
+    <form method="get" style="width:100%; max-width:400px;">
+    <input type="text" name="q" placeholder="Buscar por nome ou telefone"
+           value="{{ query|default:'' }}"
+           style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
+</form>
+
+    <!---LISTA--->
+    <div style="width:100%; max-width:400px;">
+    {% for cliente in clientes %}
+        <div onclick="location.href='{%  url 'cliente_detail' cliente.id%}'"
+             style="background: white;padding: 15px;margin-bottom: 15px;
+             border-radius:10px; box-shadow: 0 0 5px rgba(0,0,0,0.1); cursor:pointer;);">"
+            <strong>{{ cliente.nome }}</strong><br>
+            <small>{{ cliente.telefone }}</small>
+
+        </div>
+    {% empty %}
+        <p>Nenhum cliente encontrado</p>
+    {% endfor %}
+    </div>
+{% endblock %}
