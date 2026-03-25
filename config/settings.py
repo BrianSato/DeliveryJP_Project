@@ -140,19 +140,12 @@ USE_TZ = True
 
 STATIC_ROOT = os.path.join(BASE_DIR,'staticfiles')
 
-STATICFILES_DIRS = []
-
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.StaticFilesStorage",
-    },
-}
-
 LOGIN_REDIRECT_URL = '/'
 
 LOGIN_URL = '/login'
 
 STATIC_URL = '/static/'
 
-WHITENOISE_AUTOREFRESH = True
-WHITENOISE_USE_FINDERS = True
+if not DEBUG:
+    STATICFILES_DIRS = []
+
