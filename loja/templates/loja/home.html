@@ -1,11 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Página Inicial - DeliveryJP</title>
-</head>
-<body>
-    <h1>Bem-vindo ao DeliveryJP!</h1>
-    <p>Se esta página aparece, o Django está renderizando corretamente.</p>
-</body>
-</html>
+{% extends "loja/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <div style="width: 100%; max-width: 400px">
+        <h2 style="text-align: center;">Menu Principal</h2>
+        <button class="menu-btn" onclick = "window.location.href='{% url 'cliente_menu'%}'">Clientes</button>
+        <button class="menu-btn" onclick = "window.location.href='{% url 'produto_menu'%}'">Produtos</button>
+    </div>
+
+{% endblock %}>

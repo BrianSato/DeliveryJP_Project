@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
@@ -141,7 +142,7 @@ STATIC_ROOT = os.path.join(BASE_DIR,'staticfiles')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-LOGIN_REDIRECT_URL = '/cliente/'
+LOGIN_REDIRECT_URL = '/'
 
 LOGIN_URL = '/login'
 

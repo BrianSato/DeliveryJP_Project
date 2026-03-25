@@ -1,0 +1,30 @@
+{% extends "loja/base.html" %}
+
+{% block title %}Detalhes do Produto{% endblock %}
+
+{% block content %}
+
+    <div style="width: 100%;max-width: 400px">
+
+    <!--- NOME e INFO --->
+    <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
+        <h2>{{ produto.nome_produto }}</h2>
+        <p>💰{{ produto.preco_unitario }}</p>
+        <p>📦Estoque Total:{{ produto.preco_unitario }}</p>
+        <p>⚠️Status Validade: {{ produto.preco_unitario }}</p>
+    </div>
+    <!---LOTES --->
+        {% for lote in lotes %}
+    <div style="background: white ; padding: 10px; margin-bottom: 8px; border-radius: 8px;">
+        <p>📦{{ lote.quantidade }} unidades</p>
+        <p>📅{{ lote.data_validade }}</p>
+        <p>⚠️{{ lote.status_lote }}</p>
+    </div>
+    {% empty %}
+        <p>Sem lotes cadastrados</p>
+    {% endfor %}
+    <button class="menu-btn" onclick="location.href='{% url 'produto_list' %}">
+        Voltar
+    </button>
+    </div>
+{% endblock %}>

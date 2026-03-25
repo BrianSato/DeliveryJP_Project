@@ -1,0 +1,38 @@
+{% extends "loja/base.html" %}
+{% load humanize %}
+
+{% block title %}Lista de Produtos{% endblock %}
+
+{% block content %}
+    <div style="width: 100%; max-width: 600px; margin: 0 auto;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Produtos Cadastrados</h2>
+        <table style="width:100%;border-collapse: collapse; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <thead style="background-color: #4CAF50; color:white">
+                <tr>
+                    <th>Nome</th>
+                    <th>Preço Unitário</th>
+                    <th>Estoque Total</th>
+                    <th>Total Encomendados</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produto in produtos %}
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px;">{{ produto.nome_produto }}</td>
+                    <td style="padding: 10px; text-align: right;">¥{{ produto.preco_unitario|floatformat:0|intcomma }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ produto.estoque_total }}</td>
+                    <td style="padding: 10px; text-align: right;">{{ produto.total_encomendados }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 20px;">Nenhum produto cadastrado</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="{% url 'produto_create' %}" class="menu-btn">Novo Produto</a>
+        </div>
+    </div>
+
+{% endblock %}>
