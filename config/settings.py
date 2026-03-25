@@ -147,7 +147,3 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login'
 
 STATIC_URL = '/static/'
-
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
