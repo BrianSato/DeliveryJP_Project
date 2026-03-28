@@ -36,6 +36,18 @@
             align-items: center;
             padding: 20px;
         }
+        label{
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        input,select{
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
@@ -48,5 +60,7 @@
     <!--- BLOCO DE CONTEÚDO QUE MUDA EM CADA PÁGINA --->
     {% block content %}{% endblock %}
 
+    <!---CONFIGURAÇÃO JS PARA PEDIDO--->
+    <script src="{% static 'loja/js/pedido.js' %}" ></script>
 </body>
 </html>

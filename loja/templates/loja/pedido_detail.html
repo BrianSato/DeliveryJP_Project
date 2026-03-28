@@ -1,0 +1,64 @@
+{% extends "loja/base.html" %}
+{% load humanize %}
+
+{% block title %}Detalhes do Pedido{% endblock %}
+
+{% block content %}
+    <div style="width: 100%; max-width: 600px; margin: 0 auto;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Detalhes do Pedido</h2>
+        <p><strong>Cliente:</strong> {{ pedido.cliente }}</p>
+        <p><strong>Data:</strong> {{ pedido.data_pedido }}</p>
+    <hr>
+
+    <h3>Itens</h3>
+    {% for item in pedido.itens.all %}
+        <div class="menu-btn">
+            {{ item }}<br>
+            Quantidade: {{ item.quantidade }}<br>
+            Valor Pago: ¥ {{ item.valor_pago |floatformat:0|intcomma}}<br>
+            Status: {{ item.status_item }}
+        </div>
+    {% empty %}
+        <p>Nenhum item pedido.</p>
+    {% endfor %}
+    <hr>
+    <h3>Adicionar Item</h3>
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Tipo:</label>
+        <select name="tipo" id="tipo" required>
+            <option value="ESTOQUE">Estoque</option>
+            <option value="ENCOMENDA">Encomenda</option>
+        </select>
+        <div id="campo-produto">
+            <label>Produto:</label>
+            <select name="produto">
+            {% for produto in produtos %}
+                <option value="{{ produto.id }}">{{ produto.nome_produto }}</option>
+            {% endfor %}
+        </select>
+        </div>
+        <div id="campo-nome-produto" style="display: none;">
+            <label>Nome Produto:</label>
+            <input type="text" name="nome_produto">
+        </div>
+        <div id="campo-valor" style="display: none;">
+            <label>Valor unitário:</label>
+            <input type="number" step="0.01" name="valor_unitario">
+        </div>
+        <label>Quantidade:</label>
+        <input type="number" name="quantidade" required>
+
+        <button type="submit" class="menu-btn">
+            ➕ Adicionar Item
+        </button>
+        <button class="menu-btn" onclick="location.href='{% url 'pedido_list' %}'">
+            🔙 Voltar
+        </button>
+        <button class="menu-btn" onclick="location.href='{% url 'home' %}'">
+            🔙 Voltar menu inicial
+        </button>
+    </form>
+    </div>
+{% endblock %}

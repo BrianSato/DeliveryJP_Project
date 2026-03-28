@@ -1,0 +1,36 @@
+{% extends "loja/base.html" %}
+{% load humanize %}
+
+{% block title %}Pedidos{% endblock %}
+
+{% block content %}
+    <div style="width: 100%; max-width: 600px; margin: 0 auto;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Lista de Pedidos</h2>
+        <div style="margin-bottom: 20px; text-align: center;">
+            <a href="{% url 'pedido_create' %}" class="menu-btn";>➕ Novo Pedido</a>
+        </div>
+        <!--- BUSCA --->
+        <form method="get" style="width:100%; max-width:540px;">
+            <input type="text" name="q" placeholder="Buscar por nome ou telefone"
+                   value="{{ query|default:'' }}"
+                   style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
+        </form>
+        {% for pedido in pedidos %}
+            <div class="menu-btn">
+                <strong>{{ pedido.cliente }}</strong><br>
+                Data: {{ pedido.data_pedido }}<br>
+                Saldo Devedor: ¥{{ pedido.atualizar_valor_total |floatformat:0|intcomma }}<br>
+
+                <a href="{% url 'pedido_detail' pedido.id %}" style="color:white ;text-decoration:none" >
+                    Ver detalhes
+                </a>
+            </div>
+            {% empty %}
+            <p>Nenhum pedido encontrado</p>
+        {% endfor %}
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="{% url 'home' %}" class="menu-btn">Voltar</a>
+        </div>
+    </div>
+
+{% endblock %}

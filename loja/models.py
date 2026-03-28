@@ -203,7 +203,7 @@ class ItemPedido(models.Model):
     data_limite_pagamento = models.DateField(null=True, blank=True)
 
     def valor_total_item(self):
-        return self.valor_unitario + self.valor_pago
+        return self.valor_unitario * self.quantidade
 
     def clean(self):
         # Precisa de pelo menos um dos campos prenchido (produto ou nome_produto)

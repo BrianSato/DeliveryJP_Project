@@ -1,10 +1,11 @@
+from datetime import datetime
 from gc import get_objects
 
 from django.db.models import Q
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from loja.models import Cliente, Produto, LoteProduto
+from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
 from loja.utils import criar_lote
 
 
@@ -122,4 +123,63 @@ def lote_create(request,produto_id):
 
     return render(request,'loja/lote_create.html',{
         'produto': produto
+    })
+@login_required
+def pedido_create(request):
+    if request.method == 'POST':
+        cliente_id=request.POST.get('cliente')
+        cliente= Cliente.objects.get(id=cliente_id)
+        pedido = Pedido.objects.create(cliente=cliente)
+
+        return redirect('pedido_detail', pedido_id= pedido.id)
+
+    clientes = Cliente.objects.all()
+
+    return render(request,'loja/pedido_create.html',{
+        'clientes':clientes
+    })
+
+@login_required
+def pedido_list(request):
+    pedidos = Pedido.objects.all()
+
+    return render(request,'loja/pedido_list.html',{
+        'pedidos':pedidos,
+    })
+
+@login_required
+def pedido_detail(request,pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    if request.method == 'POST':
+        quantidade = request.POST.get('quantidade')
+        valor_unitario= request.POST.get('valor_unitario')
+        tipo= request.POST.get('tipo')
+        if tipo == 'ESTOQUE':
+            produto_id = request.POST.get('produto')
+            produto= Produto.objects.get(id=produto_id)
+
+            ItemPedido.objects.create(
+                pedido=pedido,
+                produto=produto,
+                quantidade=quantidade,
+                valor_unitario=valor_unitario,
+                tipo=tipo
+           )
+        else: #ENCOMENDA
+            nome_produto= request.POST.get('nome_produto')
+            valor_unitario= request.POST.get('valor_unitario')
+
+            ItemPedido.objects.create(
+                pedido=pedido,
+                nome_produto=nome_produto,
+                quantidade=quantidade,
+                valor_unitario=valor_unitario,
+                tipo=tipo
+            )
+
+        return redirect('pedido_detail',pedido_id= pedido.id)
+    produtos= Produto.objects.all()
+    return render(request,'loja/pedido_detail.html',{
+        'pedido':pedido,
+        'produtos':produtos
     })

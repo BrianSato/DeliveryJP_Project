@@ -32,4 +32,10 @@ urlpatterns = [
     path('produto/<int:id>/', views.produto_detail, name='produto_detail'),
     #criar lote do produto
     path('lote/novo/<int:produto_id>/', views.lote_create, name='lote_create'),
+    #lista de pedidos
+    path('pedido/lista/', views.pedido_list, name='pedido_list'),
+    #detalhes do pedido
+    path('pedido/<int:pedido_id>/', views.pedido_detail, name='pedido_detail'),
+    #criar novo pedido
+    path('pedido/novo/', views.pedido_create, name='pedido_create'),
 ]
