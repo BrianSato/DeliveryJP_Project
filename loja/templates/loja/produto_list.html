@@ -6,6 +6,13 @@
 {% block content %}
     <div style="width: 100%; max-width: 600px; margin: 0 auto;">
         <h2 style="text-align: center; margin-bottom: 20px;">Produtos Cadastrados</h2>
+        <!--- BUSCA --->
+        <form method="get" style="width:100%; max-width:540px;">
+            <input type="text" name="q" placeholder="Buscar por nome ou telefone"
+                   value="{{ query|default:'' }}"
+                   style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
+        </form>
+
         <table style="width:100%;border-collapse: collapse; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
             <thead style="background-color: #4CAF50; color:white">
                 <tr>
@@ -18,20 +25,34 @@
             <tbody>
                 {% for produto in produtos %}
                 <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 10px;">{{ produto.nome_produto }}</td>
-                    <td style="padding: 10px; text-align: right;">¥{{ produto.preco_unitario|floatformat:0|intcomma }}</td>
-                    <td style="padding: 10px; text-align: right;">{{ produto.estoque_total }}</td>
-                    <td style="padding: 10px; text-align: right;">{{ produto.total_encomendados }}</td>
+                    <td style="padding: 10px;">
+                        <a href="{%  url 'produto_detail' produto.id %}">
+                            {{ produto.nome_produto }}
+                        </a>
+                    </td>
+                    <td style="padding: 10px; text-align: right;">
+                        ¥{{ produto.preco_unitario|floatformat:0|intcomma }}
+                    </td>
+                    <td style="padding: 10px; text-align: right;">
+                        {{ produto.estoque_total }}
+                    </td>
+                    <td style="padding: 10px; text-align: right;">
+                        {{ produto.total_encomendados }}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="3" style="text-align: center; padding: 20px;">Nenhum produto cadastrado</td>
+                    <td colspan="4" style="text-align: center; padding: 20px;">
+                        Nenhum produto cadastrado
+                    </td>
                 </tr>
+
                 {% endfor %}
             </tbody>
         </table>
         <div style="margin-top: 20px; text-align: center;">
-            <a href="{% url 'produto_create' %}" class="menu-btn">Novo Produto</a>
+            <a href="{% url 'produto_create' %}" class="menu-btn">➕ Novo Produto</a>
+            <a href="{% url 'home' %}" class="menu-btn">Voltar</a>
         </div>
     </div>
 

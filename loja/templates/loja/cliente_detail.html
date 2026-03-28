@@ -6,25 +6,28 @@
 
     <div style="width: 100%;max-width: 400px">
 
-    <!--- NOME --->
-    <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
-        <h2>{{ cliente.nome }}</h2>
-    </div>
-    <!---INFOR --->
-    <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
-        <p><strong>📞 Telefone:</strong>{{ cliente.telefone }}</p>
-        <p><strong>🏠 Endereço:</strong>{{ cliente.endereco }}</p>
-        <p><strong>⭐ Pontos:</strong>{{ cliente.pontos }}</p>
-    </div>
-    <!--- FINANCEIRO --->
-    <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
-        <p><strong>📞 Saldo Devedor:</strong>{{ cliente.saldo_devedor }}</p>
-        <p><strong>📅 Data Limite:</strong>{{ cliente.data_limite_pagamento }}</p>
-    </div>
-    <!--- VOLTAR --->
-    <button class="menu-btn" onclick="window.location.href='{% url 'cliente_list'%}'">
-        Voltar
-    </button>
+        <!--- NOME --->
+        <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
+            <h2>{{ cliente.nome }}</h2>
+        </div>
+        <!---INFOR --->
+        <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
+            <p><strong>📞 Telefone:</strong>{{ cliente.telefone }}</p>
+            <p><strong>🏠 Endereço:</strong>{{ cliente.endereco }}</p>
+            <p><strong>⭐ Pontos:</strong>{{ cliente.pontos }}</p>
+        </div>
+        <!--- FINANCEIRO --->
+        <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
+            <p><strong>💲 Saldo Devedor:</strong>{{ cliente.saldo_devedor }}</p>
+            <p><strong>📅 Data Limite:</strong>{{ cliente.data_limite_pagamento }}</p>
+        </div>
+        <!--- VOLTAR --->
+        <button class="menu-btn" onclick="window.location.href='{% url 'cliente_list'%}'">
+            Voltar
+        </button>
+        <button class="menu-btn" onclick="window.location.href='{% url 'home'%}'">
+            Voltar menu Inicial
+        </button>
 
     </div>
 {% endblock %}>

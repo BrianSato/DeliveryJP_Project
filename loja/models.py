@@ -4,6 +4,9 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from datetime import date, timedelta
 
+from django.utils.safestring import mark_safe
+
+
 #===================== CLIENTES =========================
 class Cliente(models.Model):
     nome = models.CharField(max_length=100)
@@ -94,6 +97,17 @@ class Produto(models.Model):
             return 'VENCIMENTO_PROXIMO'
         return 'OK'
 
+    def status_validade_colorido(self):
+        status = self.status_validade()
+
+        if status == 'VENCIDO':
+            return mark_safe('<span style="color:red;font-weight:bold;">•Alguns produtos vencidos</span>')
+        if status == 'VENCIMENTO_PROXIMO':
+            return mark_safe('<span style="color:orange;font-weight:bold;">•Produtos à vencer</span>')
+        if status == 'SEM_VALIDADE':
+            return mark_safe('<span style="color:gray;font-weight:bold;">•Sem validade</span>')
+        return mark_safe('<span style="color:green;font-weight:bold;">•OK</span>')
+
     def __str__(self):
         return self.nome_produto
 
@@ -103,6 +117,7 @@ class LoteProduto(models.Model):
     produto = models.ForeignKey(Produto,on_delete=models.CASCADE)
     quantidade = models.IntegerField()
     data_validade = models.DateField(null=True,blank=True)
+
 
     def status_lote(self):
         if not self.data_validade:
@@ -114,6 +129,20 @@ class LoteProduto(models.Model):
         elif (self.data_validade - hoje).days <= 7:
             return 'VENCIMENTO_PROXIMO'
         return 'OK'
+
+    def status_lote_colorido(self):
+        if not self.pk:
+            return ''
+
+        status = self.status_lote()
+
+        if status == 'VENCIDO':
+            return mark_safe('<span style="color:red;font-weight:bold;">•Vencidos</span>')
+        if status == 'VENCIMENTO_PROXIMO':
+            return mark_safe('<span style="color:orange;font-weight:bold;">•Vencimento Próximo</span>')
+        if status == 'SEM_VALIDADE':
+            return mark_safe('<span style="color:gray;font-weight:bold;">•Sem validade</span>')
+        return mark_safe('<span style="color:green;font-weight:bold;">•OK</span>')
 
     def __str__(self):
         return f'{self.produto} - {self.quantidade} unidades - Validade: {self.data_validade}'

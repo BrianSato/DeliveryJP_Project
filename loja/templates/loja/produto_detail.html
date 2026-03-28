@@ -1,4 +1,5 @@
 {% extends "loja/base.html" %}
+{% load humanize %}
 
 {% block title %}Detalhes do Produto{% endblock %}
 
@@ -6,25 +7,36 @@
 
     <div style="width: 100%;max-width: 400px">
 
-    <!--- NOME e INFO --->
-    <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
-        <h2>{{ produto.nome_produto }}</h2>
-        <p>💰{{ produto.preco_unitario }}</p>
-        <p>📦Estoque Total:{{ produto.preco_unitario }}</p>
-        <p>⚠️Status Validade: {{ produto.preco_unitario }}</p>
-    </div>
-    <!---LOTES --->
+        <!--- NOME --->
+        <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
+            <h2>{{ produto.nome_produto }}</h2>
+        </div>
+        <!--- INFO --->
+        <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
+            <p><strong>💰Preço: </strong>¥{{ produto.preco_unitario|floatformat:0|intcomma }}</p>
+            <p><strong>📦Estoque Total: </strong>{{ produto.estoque_total }}</p>
+            <p><strong>⚠️Status Validade: </strong>{{ produto.status_validade_colorido }}</p>
+        </div>
+        <!---LOTES --->
         {% for lote in lotes %}
-    <div style="background: white ; padding: 10px; margin-bottom: 8px; border-radius: 8px;">
-        <p>📦{{ lote.quantidade }} unidades</p>
-        <p>📅{{ lote.data_validade }}</p>
-        <p>⚠️{{ lote.status_lote }}</p>
-    </div>
-    {% empty %}
-        <p>Sem lotes cadastrados</p>
-    {% endfor %}
-    <button class="menu-btn" onclick="location.href='{% url 'produto_list' %}">
-        Voltar
-    </button>
+        <div style="background: white ; padding: 10px; margin-bottom: 8px; border-radius: 8px;">
+            <p><strong>📦Quantidade: </strong>{{ lote.quantidade }} unidades</p>
+            <p><strong>📅Validade: </strong>{{ lote.data_validade }}</p>
+            <p><strong>⚠️️Status do Lote: </strong>{{ lote.status_lote_colorido }}</p>
+        </div>
+        {% empty %}
+            <p>Sem lotes cadastrados</p>
+        {% endfor %}
+        <div>
+            <button class="menu_btn" onclick="location.href='{% url 'lote_create' produto.id %}'">
+                ➕ Adicionar Lote
+            </button>
+            <button class="menu-btn" onclick="location.href='{% url 'produto_list' %}'">
+                🔙 Voltar
+            </button>
+            <button class="menu-btn" onclick="location.href='{% url 'home' %}'">
+                🔙 Voltar menu inicial
+            </button>
+        </div>
     </div>
 {% endblock %}>

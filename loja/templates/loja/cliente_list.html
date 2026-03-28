@@ -3,13 +3,17 @@
 {% block title %}Clientes{% endblock %}
 
 {% block content %}
+    <div style="margin-bottom: 20px; text-align: center;">
+        <a href="{% url 'cliente_create' %}" class="menu-btn">➕ Novo Cliente</a>
+    </div>
     <!--- BUSCA --->
-    <form method="get" style="width:100%; max-width:400px;">
-    <input type="text" name="q" placeholder="Buscar por nome ou telefone"
-           value="{{ query|default:'' }}"
-           style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
-</form>
-
+    <div style="width:100%; max-width:400px;">
+        <form method="get" style="width:100%; max-width:375px;">
+        <input type="text" name="q" placeholder="Buscar por nome ou telefone"
+               value="{{ query|default:'' }}"
+               style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
+        </form>
+    </div>
     <!---LISTA--->
     <div style="width:100%; max-width:400px;">
     {% for cliente in clientes %}
@@ -23,5 +27,9 @@
     {% empty %}
         <p>Nenhum cliente encontrado</p>
     {% endfor %}
+    </div>
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="{% url 'home' %}" class="menu-btn">Voltar</a>
+    </div>
     </div>
 {% endblock %}

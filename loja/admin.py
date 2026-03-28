@@ -144,18 +144,7 @@ class LoteProdutoInline(admin.TabularInline):
     readonly_fields = ('status_colorido',)
 
     def status_colorido(self, obj):
-        if not obj.pk:
-            return ''
-
-        status = obj.status_lote()
-
-        if status == 'VENCIDO':
-            return mark_safe('<span style="color:red;font-weight:bold;">•Vencidos</span>')
-        if status == 'VENCIMENTO_PROXIMO':
-            return mark_safe('<span style="color:yellow;font-weight:bold;">•Vencimento Próximo</span>')
-        if status == 'SEM_VALIDADE':
-            return mark_safe('<span style="color:gray;font-weight:bold;">•Sem validade</span>')
-        return mark_safe('<span style="color:green;font-weight:bold;">•OK</span>')
+        return obj.status_lote_colorido()
 
     status_colorido.short_description = 'Status Validade'
 
@@ -170,23 +159,15 @@ class ProdutoAdmin(admin.ModelAdmin):
         'preco_formatado',
         'estoque_total',
         'total_encomendados',
-        'ativo','status_colorido'
+        'ativo','status_val_colorido'
     )
     search_fields = ('nome_produto',)
     inlines = [LoteProdutoInline]
 
-    def status_colorido(self,obj):
-        status = obj.status_validade()
+    def status_val_colorido(self,obj):
+        return obj.status_validade_colorido()
 
-        if status == 'VENCIDO':
-            return mark_safe('<span style="color:red;font-weight:bold;">•Alguns produtos vencidos</span>')
-        if status == 'VENCIMENTO_PROXIMO':
-            return mark_safe('<span style="color:yellow;font-weight:bold;">•Produtos à vencer</span>')
-        if status == 'SEM_VALIDADE':
-            return mark_safe('<span style="color:gray;font-weight:bold;">•Sem validade</span>')
-        return mark_safe('<span style="color:green;font-weight:bold;">•OK</span>')
-
-    status_colorido.short_description = 'Status Validade'
+    status_val_colorido.short_description = 'Status Validade'
 
     def preco_formatado(self,obj):
         return formatar_iene(obj.preco_unitario)

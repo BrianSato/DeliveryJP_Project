@@ -4,7 +4,8 @@ from django.db.models import Q
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from loja.models import Cliente, Produto
+from loja.models import Cliente, Produto, LoteProduto
+from loja.utils import criar_lote
 
 
 #Home protegida
@@ -20,11 +21,6 @@ class MyloginView(LoginView):
     #Sempre redireciona para /cliente/ após login
     def get_success_url(self):
         return '/cliente/'
-
-#Tela Cliente Menu
-@login_required
-def cliente_menu(request):
-    return render(request,'loja/cliente_menu.html')
 
 #Tela de Novo Cliente
 @login_required
@@ -85,15 +81,45 @@ def produto_create(request):
 @login_required
 def produto_list(request):
     produtos = Produto.objects.all()
+    query = request.GET.get('q')
+    if query:
+        produtos = produtos.filter(
+            Q(nome_produto__icontains=query)
+        )
     return render(request,'loja/produto_list.html',{
-        'produtos':produtos
+        'produtos':produtos,
+        'query':query,
     })
 
 @login_required
-def produto_detail(request):
+def produto_detail(request,id):
     produto = get_object_or_404(Produto, id=id)
-    lotes= produto.loteproduto_set.all()
+    if request.method == 'POST':
+        quantidade = request.POST.get('quantidade')
+        data_validade = request.POST.get('data_validade')
+
+        criar_lote(produto,quantidade,data_validade)
+
+        return redirect('produto_detail',produto_id= produto.id)
+
+    lotes= produto.loteproduto_set.filter(quantidade__gt=0).order_by('data_validade')
+
     return render(request,'loja/produto_detail.html',{
-        'produtos':produto,
-        'lotes:':lotes
+        'produto':produto,
+        'lotes':lotes
+    })
+
+@login_required
+def lote_create(request,produto_id):
+    produto = get_object_or_404(Produto, id=produto_id)
+    if request.method == 'POST':
+        quantidade = request.POST.get('quantidade')
+        data_validade = request.POST.get('data_validade')
+
+        criar_lote(produto,quantidade,data_validade)
+
+        return redirect('produto_detail',id= produto_id)
+
+    return render(request,'loja/lote_create.html',{
+        'produto': produto
     })

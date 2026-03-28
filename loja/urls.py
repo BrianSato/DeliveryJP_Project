@@ -16,12 +16,10 @@ urlpatterns = [
          ),
         name='login'
     ),
-    # clientes menu
-    path('cliente/', views.cliente_menu, name='cliente_menu'),
+    # lista de clientes
+    path('cliente/', views.cliente_list, name='cliente_list'),
     # cliente novo
     path('cliente/novo/', views.cliente_create, name='cliente_create'),
-    # lista de clientes
-    path('cliente/lista/', views.cliente_list, name='cliente_list'),
     #detalhes dos clientes
     path('cliente/<int:id>/', views.cliente_detail, name='cliente_detail'),
     # menu de produtos
@@ -32,4 +30,6 @@ urlpatterns = [
     path('produto/lista/', views.produto_list, name='produto_list'),
     #detalhes do produto
     path('produto/<int:id>/', views.produto_detail, name='produto_detail'),
+    #criar lote do produto
+    path('lote/novo/<int:produto_id>/', views.lote_create, name='lote_create'),
 ]

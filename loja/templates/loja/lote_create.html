@@ -1,0 +1,23 @@
+{% extends "loja/base.html" %}
+
+{% block title %}Adicionar Lote{% endblock %}
+
+{% block content %}
+    <div style="max-width: 400px; width: 100%;">
+        <h2>Adicionar Lote para {{ produto.nome_produto }}</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="number" name="quantidade" placeholder="Quantidade">
+            <input type="date" name="data_validade" placeholder="Data de Validade">
+
+            <button type="submit" class="menu_btn">
+                Adicionar
+            </button>
+        </form>
+
+        <button class="menu_btn" onclick="location.href='{% url 'produto_detail' produto.id %}'">
+            Voltar
+        </button>
+    </div>
+
+{% endblock %}
