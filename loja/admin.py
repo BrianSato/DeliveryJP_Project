@@ -129,7 +129,7 @@ class PedidoAdmin(admin.ModelAdmin):
         return '-'
     data_pedido_formatada.short_description = 'Data do Pedido'
     def valor_total_formatado(self,obj):
-        return formatar_iene(obj.atualizar_valor_total())
+        return formatar_iene(obj.valor_total())
     valor_total_formatado.short_description = 'Valor Total'
     def valor_pago_formatado(self,obj):
         return formatar_iene(obj.valor_pago_total())

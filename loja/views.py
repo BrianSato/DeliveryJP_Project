@@ -1,10 +1,13 @@
 from datetime import datetime
+from decimal import Decimal
 from gc import get_objects
 
 from django.db.models import Q
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
+from pyexpat.errors import messages
+
 from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
 from loja.utils import criar_lote
 
@@ -150,9 +153,34 @@ def pedido_list(request):
 @login_required
 def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
+
+    # ATUALIZAR PAGAMENTO
+    valor_pago = request.POST.get('valor_pago')
+    if valor_pago:
+        pedido.valor_pago += Decimal(valor_pago)
+        pedido.save()
+
     if request.method == 'POST':
-        quantidade = request.POST.get('quantidade')
-        valor_unitario= request.POST.get('valor_unitario')
+        #ATUALIZAR STATUS DO ITEM
+        item_id = request.POST.get('item_id')
+        novo_status = request.POST.get('status_item')
+
+        if item_id and novo_status:
+            item= ItemPedido.objects.get(id=item_id)
+
+            #REGRA DE NEGÓCIO
+            if novo_status in ['ENVIADO','ENTREGUE']:
+                if pedido.valor_pago < pedido.valor_total:
+                    messages.error(request, 'Só é possível enviar após pagamento total')
+                    return redirect('pedido_detail',pedido_id= pedido.id)
+
+            item.status_item = novo_status
+            item.save()
+
+        return redirect('pedido_detail',pedido_id= pedido.id)
+    #CRIA NOVO PEDIDO
+    if request.method == 'POST':
+        quantidade = int(request.POST.get('quantidade')or 0)
         tipo= request.POST.get('tipo')
         if tipo == 'ESTOQUE':
             produto_id = request.POST.get('produto')
@@ -162,7 +190,7 @@ def pedido_detail(request,pedido_id):
                 pedido=pedido,
                 produto=produto,
                 quantidade=quantidade,
-                valor_unitario=valor_unitario,
+                valor_unitario=produto.preco_unitario,
                 tipo=tipo
            )
         else: #ENCOMENDA
@@ -178,6 +206,7 @@ def pedido_detail(request,pedido_id):
             )
 
         return redirect('pedido_detail',pedido_id= pedido.id)
+
     produtos= Produto.objects.all()
     return render(request,'loja/pedido_detail.html',{
         'pedido':pedido,

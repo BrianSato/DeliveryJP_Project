@@ -34,7 +34,7 @@ class Cliente(models.Model):
             status_pagamento__in=['PENDENTE','PARCIAL']
         ).order_by('status_pagamento')
 
-        return sum(i.valor_total_item() - (i.valor_pago or 0) for i in itens)
+        return sum(i._item() - (i.valor_pago or 0) for i in itens)
 
     @property
     def total_gasto(self):
@@ -151,14 +151,42 @@ class LoteProduto(models.Model):
 
 class Pedido(models.Model):
 
+    FORMA_PAGAMENTO = [
+        ('DINHEIRO', 'Dinheiro'),
+        ('CARTAO', 'Cartão'),
+        ('TRANSFERENCIA', 'Transferência'),
+    ]
+
     cliente = models.ForeignKey(Cliente,on_delete=models.CASCADE)
     data_pedido = models.DateField(auto_now_add=True)
+    valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    forma_pagamento = models.CharField(max_length=15, choices=FORMA_PAGAMENTO, null=True, blank=True)
+    data_limite_pagamento = models.DateField(null=True, blank=True)
 
-    def atualizar_valor_total(self):
+    @property
+    def valor_total(self):
         return sum(item.valor_total_item() for item in self.itens.all())
 
-    def valor_pago_total(self):
-        return sum(item.valor_pago for item in self.itens.all())
+    @property
+    def valor_restante(self):
+        return self.valor_total - self.valor_pago
+
+    @property
+    def status_pagamento(self):
+
+        if self.valor_pago == 0:
+            return 'AGUARDANDO'
+        elif self.valor_pago < self.valor_total:
+            return 'PARCIAL'
+        else:
+            return 'PAGO'
+    def atualizar_data_limite(self):
+        if self.valor_pago == 0:
+            self.data_limite_pagamento = date.today() + timedelta(days=1)
+        elif self.valor_pago < self.valor_total:
+            self.data_limite_pagamento = date.today() + timedelta(days=5)
+        else:
+            self.data_limite_pagamento = None
 
     def __str__(self):
         return f'Pedido:{self.cliente}'
@@ -170,12 +198,6 @@ class ItemPedido(models.Model):
         ('ESTOQUE','Estoque'),
         ('ENCOMENDA','Encomenda') ,
     ]
-    STATUS_PAGAMENTO = [
-        ('AGUARDANDO', 'Aguardando pagamento inicial'),
-        ('PARCIAL', 'Pagamento parcial feito'),
-        ('PAGO', '100% pago'),
-        ('CANCELADO', 'Cancelado'),
-    ]
     STATUS_ITEM = [
         ('PENDENTE', 'Aguardando Pedido'),
         ('PEDIDO', 'Pedido feito'),
@@ -184,11 +206,6 @@ class ItemPedido(models.Model):
         ('ENTREGUE', 'Entregue ao cliente'),
         ('CANCELADO', 'Cancelado')
     ]
-    FORMA_PAGAMENTO = [
-        ('DINHEIRO', 'Dinheiro'),
-        ('CARTAO', 'Cartão'),
-        ('TRANSFERENCIA', 'Transferência'),
-    ]
 
     pedido = models.ForeignKey(Pedido,on_delete=models.CASCADE,related_name='itens')
     produto = models.ForeignKey(Produto,on_delete=models.SET_NULL,null=True,blank=True,related_name='itens_pedido')
@@ -196,38 +213,29 @@ class ItemPedido(models.Model):
     tipo = models.CharField(max_length=15,choices=TIPO_VENDA)
     quantidade = models.IntegerField(default=0)
     valor_unitario = models.DecimalField(max_digits=10, decimal_places=2,default=0)
-    valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    status_pagamento = models.CharField(max_length=15,choices=STATUS_PAGAMENTO,default='AGUARDANDO')
     status_item = models.CharField(max_length=15,choices=STATUS_ITEM,default='PENDENTE')
-    forma_pagamento = models.CharField(max_length=15,choices=FORMA_PAGAMENTO,null=True,blank=True)
-    data_limite_pagamento = models.DateField(null=True, blank=True)
 
     def valor_total_item(self):
         return self.valor_unitario * self.quantidade
 
     def clean(self):
-        # Precisa de pelo menos um dos campos prenchido (produto ou nome_produto)
+        # DEVE TER PRODUTO OU NOME_PRODUTO
         if not self.produto and not self.nome_produto:
             raise ValidationError('Informe um produto ou nome do produto')
-
-        valor_total = self.valor_total_item()
-        valor_pago = self.valor_pago or 0
-
-        # Valor pago não pode ser maior que o total
-        if valor_pago > valor_total:
-            raise ValidationError('O valor pago não pode ser maior que o total')
-        # não pode fazer pedido sem pagamento
-        if self.tipo == 'ENCOMENDA' and self.status_item != 'PENDENTE' and valor_pago == 0:
-            raise ValidationError('Não é possível fazer o pedido sem pagamento')
-        # não pode enviar sem pagamento total:
-        if self.status_item in ['ENVIADO','ENTREGUE'] and valor_pago < valor_total :
-            raise ValidationError('Só é possível enviar após pagamento total')
+        #NÃO PODE TER OS DOIS AO MESMO TEMPO
+        if self.produto and self.nome_produto:
+            raise ValidationError('Escolha produto OU nome do produto')
+        #QUANTIDADE OBRIGATÓRIA E VÁLIDA
+        if not self.quantidade or self.quantidade <=0:
+            raise ValidationError('Quantidade deve ser maior que zero')
+        #TIPO ESTOQUE PRECISA DE PRODUTO
+        if self.tipo == 'ESTOQUE' and not self.produto:
+            raise ValidationError('Selecione um produto para itens de estoque')
+        #TIPO ENCOMENDA PRECISA DE NOME
+        if self.tipo == 'ENCOMENDA' and not self.nome_produto:
+            raise ValidationError('Informe o nome do produto para encomenda')
 
     def save(self,*args,**kwargs):
-
-        valor_total = self.valor_total_item() or 0
-        valor_pago = self.valor_pago or 0
-        status_anterior = None
         item_antigo = None
 
         if self.pk:
@@ -237,28 +245,6 @@ class ItemPedido(models.Model):
             except ItemPedido.DoesNotExist:
                 pass
 
-        # atualiza status automaticamente e impôem data limite de pagamento
-        # AGUARDANDO
-        if valor_pago <= 0:
-            self.status_pagamento = 'AGUARDANDO'
-            if status_anterior != 'AGUARDANDO':
-                self.data_limite_pagamento = date.today() + timedelta(days=1)
-        # PARCIALMENTE PAGO
-        elif valor_pago < valor_total:
-            self.status_pagamento = 'PARCIAL'
-            if status_anterior != 'PARCIAL':
-                self.data_limite_pagamento = date.today() + timedelta(days=5)
-        # TOTALMENTE PAGO
-        else:
-            self.status_pagamento = 'PAGO'
-            self.data_limite_pagamento = None
-        # CANCELAMENTO AUTOMÁTICO
-        if (
-                self.data_limite_pagamento and
-                date.today() > self.data_limite_pagamento and
-                self.status_item != 'CANCELADO'
-        ):
-            self.status_item = 'CANCELADO'
         # RETORNO AO ESTOQUE
         if (
                 item_antigo and
@@ -272,6 +258,8 @@ class ItemPedido(models.Model):
                 produto=self.produto,
                 quantidade=self.quantidade,
             )
+
+        self.full_clean()
         super().save(*args,**kwargs)
     def __str__(self):
         if self.produto:

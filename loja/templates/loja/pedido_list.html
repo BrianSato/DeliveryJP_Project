@@ -19,7 +19,7 @@
             <div class="menu-btn">
                 <strong>{{ pedido.cliente }}</strong><br>
                 Data: {{ pedido.data_pedido }}<br>
-                Saldo Devedor: ¥{{ pedido.atualizar_valor_total |floatformat:0|intcomma }}<br>
+                Total Pedido: ¥{{ pedido.valor_total |floatformat:0|intcomma }}<br>
 
                 <a href="{% url 'pedido_detail' pedido.id %}" style="color:white ;text-decoration:none" >
                     Ver detalhes
