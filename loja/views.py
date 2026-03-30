@@ -58,9 +58,11 @@ def cliente_list(request):
 @login_required
 def cliente_detail(request,id):
     cliente = get_object_or_404(Cliente, id=id)
+    pedidos = cliente.pedidos.all()
 
     return render(request,'loja/cliente_detail.html',{
-        'cliente':cliente
+        'cliente':cliente,
+        'pedidos':pedidos,
     })
 @login_required
 def produto_menu(request):
@@ -154,13 +156,13 @@ def pedido_list(request):
 def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
 
-    # ATUALIZAR PAGAMENTO
-    valor_pago = request.POST.get('valor_pago')
-    if valor_pago:
-        pedido.valor_pago += Decimal(valor_pago)
-        pedido.save()
-
     if request.method == 'POST':
+        # ATUALIZAR PAGAMENTO
+        valor_pago = request.POST.get('valor_pago')
+        if valor_pago:
+            pedido.valor_pago += Decimal(valor_pago)
+            pedido.save()
+
         #ATUALIZAR STATUS DO ITEM
         item_id = request.POST.get('item_id')
         novo_status = request.POST.get('status_item')
@@ -177,33 +179,34 @@ def pedido_detail(request,pedido_id):
             item.status_item = novo_status
             item.save()
 
-        return redirect('pedido_detail',pedido_id= pedido.id)
-    #CRIA NOVO PEDIDO
-    if request.method == 'POST':
+    #CRIA NOVO ITEM
         quantidade = int(request.POST.get('quantidade')or 0)
         tipo= request.POST.get('tipo')
+
         if tipo == 'ESTOQUE':
             produto_id = request.POST.get('produto')
-            produto= Produto.objects.get(id=produto_id)
+            if produto_id:
+                produto = Produto.objects.get(id=produto_id)
 
-            ItemPedido.objects.create(
-                pedido=pedido,
-                produto=produto,
-                quantidade=quantidade,
-                valor_unitario=produto.preco_unitario,
-                tipo=tipo
-           )
-        else: #ENCOMENDA
+                ItemPedido.objects.create(
+                    pedido=pedido,
+                    produto=produto,
+                    quantidade=quantidade,
+                    valor_unitario=produto.preco_unitario,
+                    tipo=tipo
+               )
+        elif tipo == 'ENCOMENDA': #ENCOMENDA
             nome_produto= request.POST.get('nome_produto')
             valor_unitario= request.POST.get('valor_unitario')
+            if nome_produto and valor_unitario:
 
-            ItemPedido.objects.create(
-                pedido=pedido,
-                nome_produto=nome_produto,
-                quantidade=quantidade,
-                valor_unitario=valor_unitario,
-                tipo=tipo
-            )
+                ItemPedido.objects.create(
+                    pedido=pedido,
+                    nome_produto=nome_produto,
+                    quantidade=quantidade,
+                    valor_unitario=valor_unitario,
+                    tipo=tipo
+                )
 
         return redirect('pedido_detail',pedido_id= pedido.id)
 

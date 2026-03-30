@@ -4,16 +4,19 @@
 
 {% block content %}
     <div style="width: 100%; max-width: 600px; margin: 0 auto;">
-        <h2 style="text-align: center; margin-bottom: 20px;">Novo Pedido</h2>
+        <h2 style="text-align: center; margin-bottom: 20px;">Escolha ou Insira um novo Cliente</h2>
     <form method="POST">
         {% csrf_token %}
-        <label for="nome">Cliente:</label>
+        <label for="nome">Lista de Clientes:</label>
         <select name="cliente">
             {% for cliente in clientes %}
             <option value="{{cliente.id}}">{{cliente.nome}}</option>
             {% endfor %}
         </select>
-        <button type="submit" class="menu-btn">Criar Pedido</button>
+        <button type="submit" class="menu-btn">Confirmar Cliente</button>
+        <a href="{% url 'cliente_create' %}" class="menu-btn">➕ Novo Cliente</a>
+        <a href="{% url 'home' %}" class="menu-btn">Voltar</a>
+
     </form>
     </div>
 {% endblock %}

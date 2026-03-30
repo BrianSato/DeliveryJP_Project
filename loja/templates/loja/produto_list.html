@@ -18,7 +18,7 @@
                 <tr>
                     <th>Nome</th>
                     <th>Preço Unitário</th>
-                    <th>Estoque Total</th>
+                    <th>Estoque Disponivel</th>
                     <th>Total Encomendados</th>
                 </tr>
             </thead>
@@ -34,7 +34,7 @@
                         ¥{{ produto.preco_unitario|floatformat:0|intcomma }}
                     </td>
                     <td style="padding: 10px; text-align: right;">
-                        {{ produto.estoque_total }}
+                        {{ produto.estoque_disponivel }}
                     </td>
                     <td style="padding: 10px; text-align: right;">
                         {{ produto.total_encomendados }}

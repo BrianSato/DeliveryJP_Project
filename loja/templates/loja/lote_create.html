@@ -7,16 +7,18 @@
         <h2>Adicionar Lote para {{ produto.nome_produto }}</h2>
         <form method="POST">
             {% csrf_token %}
+            <label>Quantidade:</label>
             <input type="number" name="quantidade" placeholder="Quantidade">
+            <label>Data de Validade:</label>
             <input type="date" name="data_validade" placeholder="Data de Validade">
 
-            <button type="submit" class="menu_btn">
-                Adicionar
+             <button type="submit" class="menu-btn">
+               ➕ Adicionar
             </button>
         </form>
 
-        <button class="menu_btn" onclick="location.href='{% url 'produto_detail' produto.id %}'">
-            Voltar
+        <button class="menu-btn" onclick="location.href='{% url 'produto_detail' produto.id %}'">
+            🔙 Voltar
         </button>
     </div>
 

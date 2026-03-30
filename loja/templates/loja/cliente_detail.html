@@ -1,4 +1,5 @@
 {% extends "loja/base.html" %}
+{% load humanize %}
 
 {% block title %}Informações do Cliente{% endblock %}
 
@@ -18,8 +19,8 @@
         </div>
         <!--- FINANCEIRO --->
         <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
-            <p><strong>💲 Saldo Devedor:</strong>{{ cliente.saldo_devedor }}</p>
-            <p><strong>📅 Data Limite:</strong>{{ cliente.data_limite_pagamento }}</p>
+            <p><strong>💲 Saldo Devedor:</strong> ¥{{ cliente.saldo_devedor_total |floatformat:0|intcomma }}</p>
+            <p><strong>📅 Data Limite:</strong>{{ cliente.proxima_data_limite}}</p>
         </div>
         <!--- VOLTAR --->
         <button class="menu-btn" onclick="window.location.href='{% url 'cliente_list'%}'">

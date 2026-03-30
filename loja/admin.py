@@ -157,7 +157,7 @@ class ProdutoAdmin(admin.ModelAdmin):
     list_display = (
         'nome_produto',
         'preco_formatado',
-        'estoque_total',
+        'estoque_disponivel',
         'total_encomendados',
         'ativo','status_val_colorido'
     )

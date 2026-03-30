@@ -4,7 +4,10 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from datetime import date, timedelta
 
+from django.db.models import Sum
+from django.template.defaulttags import lorem
 from django.utils.safestring import mark_safe
+from loja.utils import baixar_estoque
 
 
 #===================== CLIENTES =========================
@@ -18,38 +21,28 @@ class Cliente(models.Model):
 
     @property
     def proxima_data_limite(self):
-        #Pega todos os pedidos do cliente
-        item = ItemPedido.objects.filter(
-            pedido__cliente=self,
-            data_limite_pagamento__isnull=False,
-            status_item__in=['PENDENTE','PEDIDO','CHEGOU','ENVIADO','ENTREGUE','CANCELADO']
-        ).order_by('data_limite_pagamento').first()
-
-        return item.data_limite_pagamento if item else None
+       pedidos= self.pedidos.exclude(data_limite_pagamento=None)
+       if pedidos.exists():
+           return min(p.data_limite_pagamento for p in pedidos)
+       return None
 
     @property
-    def saldo_devedor(self):
-        itens = ItemPedido.objects.filter(
-            pedido__cliente = self,
-            status_pagamento__in=['PENDENTE','PARCIAL']
-        ).order_by('status_pagamento')
-
-        return sum(i._item() - (i.valor_pago or 0) for i in itens)
+    def saldo_devedor_total(self):
+        return sum(pedido.valor_restante or 0 for pedido in self.pedidos.all())
 
     @property
     def total_gasto(self):
         itens = ItemPedido.objects.filter(
             pedido__cliente = self,
-            status_pagamento = 'PAGO'
         )
         return sum(i.valor_total_item() for i in itens)
 
     @property
     def tem_atraso(self):
-        return ItemPedido.objects.filter(
-            pedido__cliente = self,
+        return Pedido.objects.filter(
+            cliente = self,
             data_limite_pagamento__lt=date.today(),
-            status_pagamento__in=['AGUARDANDO','PARCIAL']
+            status_pagamento = self
         ).exists()
 
     def __str__(self):
@@ -63,8 +56,8 @@ class Produto(models.Model):
     ativo = models.BooleanField(default=True)
 
     @property
-    def estoque_total(self):
-        return sum(lote.quantidade for lote in self.loteproduto_set.all())
+    def estoque_disponivel(produto):
+        return produto.lotes.aggregate(total=Sum('quantidade'))['total'] or 0
 
     def total_encomendados(self):
         return self.itens_pedido.filter(
@@ -76,7 +69,8 @@ class Produto(models.Model):
 
     def status_validade(self):
         lotes = self.loteproduto_set.all()
-        if not lotes.exists():
+
+        if not lotes.exists() or lotes.count() == 0:
             return "SEM_VALIDADE"
         hoje = date.today()
 
@@ -114,10 +108,9 @@ class Produto(models.Model):
 #===================== LOTE PRODUTO =========================
 
 class LoteProduto(models.Model):
-    produto = models.ForeignKey(Produto,on_delete=models.CASCADE)
+    produto = models.ForeignKey(Produto,on_delete=models.CASCADE,related_name='lotes')
     quantidade = models.IntegerField()
     data_validade = models.DateField(null=True,blank=True)
-
 
     def status_lote(self):
         if not self.data_validade:
@@ -157,7 +150,7 @@ class Pedido(models.Model):
         ('TRANSFERENCIA', 'Transferência'),
     ]
 
-    cliente = models.ForeignKey(Cliente,on_delete=models.CASCADE)
+    cliente = models.ForeignKey(Cliente,on_delete=models.CASCADE, related_name='pedidos')
     data_pedido = models.DateField(auto_now_add=True)
     valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     forma_pagamento = models.CharField(max_length=15, choices=FORMA_PAGAMENTO, null=True, blank=True)
@@ -173,7 +166,6 @@ class Pedido(models.Model):
 
     @property
     def status_pagamento(self):
-
         if self.valor_pago == 0:
             return 'AGUARDANDO'
         elif self.valor_pago < self.valor_total:
@@ -188,6 +180,7 @@ class Pedido(models.Model):
         else:
             self.data_limite_pagamento = None
 
+        self.save(update_fields=['data_limite_pagamento'])
     def __str__(self):
         return f'Pedido:{self.cliente}'
 
@@ -237,15 +230,26 @@ class ItemPedido(models.Model):
 
     def save(self,*args,**kwargs):
         item_antigo = None
+        is_new = self.pk is None
 
-        if self.pk:
+        if not is_new:
             try:
                 item_antigo = ItemPedido.objects.get(pk=self.pk)
-                status_anterior = item_antigo.status_pagamento
             except ItemPedido.DoesNotExist:
                 pass
+        #VALIDA ESTOQUE ANTES
+        if is_new and self.tipo == 'ESTOQUE' and self.produto and self.quantidade:
+            if self.quantidade > self.produto.estoque_disponivel:
+                raise ValidationError({'quantidade':'Estoque insuficiente'})
+        #VALIDA MODEL
+        self.full_clean()
+        #SALVA PRIMEIRO
+        super().save(*args,**kwargs)
+        #BAIXAR ESTOQUE (apenas na criação)
+        if is_new and self.tipo == 'ESTOQUE' and self.produto and self.quantidade:
+           baixar_estoque(self.produto,self.quantidade)
 
-        # RETORNO AO ESTOQUE
+        # RETORNO AO ESTOQUE (cancelamento)
         if (
                 item_antigo and
                 item_antigo.status_item != 'CANCELADO' and
@@ -259,8 +263,6 @@ class ItemPedido(models.Model):
                 quantidade=self.quantidade,
             )
 
-        self.full_clean()
-        super().save(*args,**kwargs)
     def __str__(self):
         if self.produto:
             return f'{self.produto.nome_produto} - {self.quantidade}'
