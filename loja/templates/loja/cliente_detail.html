@@ -21,6 +21,17 @@
         <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
             <p><strong>💲 Saldo Devedor:</strong> ¥{{ cliente.saldo_devedor_total |floatformat:0|intcomma }}</p>
             <p><strong>📅 Data Limite:</strong>{{ cliente.proxima_data_limite}}</p>
+            <td>
+                {% if cliente.tem_atraso %}
+                    <span style="color:red;font-weight: bold">
+                        ⚠️ Pagamento em Atrasado
+                    </span>
+                {% else %}
+                    <span style="color:green;font-weight: bold">
+                        ✅️ Pagamento em dia
+                    </span>
+                {% endif %}
+            </td>
         </div>
         <!--- VOLTAR --->
         <button class="menu-btn" onclick="window.location.href='{% url 'cliente_list'%}'">

@@ -26,14 +26,14 @@ class ClienteAdmin(admin.ModelAdmin):
     proxima_data_limite.short_description = 'Próx. Data Limite'
 
     def saldo_atual(self,obj):
-        total =  obj.saldo_devedor
+        total =  obj.saldo_devedor_total
         return formatar_iene(total or 0)
     saldo_atual.short_description = 'Saldo Devedor'
 
     def tem_atraso_colorido(self,obj):
-        if obj.tem_atraso:
+        if obj.tem_atraso():
             return mark_safe('<span style= "color:red;font-weight:bold;"> ⚠️ Atrasado</span>')
-        return 'OK'
+        return mark_safe('<span style= "color:green;font-weight:bold;"> ✅️ Em dia</span>')
     tem_atraso_colorido.short_description = 'Situação'
 
 #===================== ITEM PEDIDO =========================
@@ -46,8 +46,6 @@ class ItemPedidoInline(admin.TabularInline):
         'nome_produto',
         'tipo',
         'quantidade',
-        'forma_pagamento',
-        'valor_pago',
     )
 
     readonly_fields = (
@@ -63,13 +61,13 @@ class ItemPedidoInline(admin.TabularInline):
         return formatar_iene(obj.valor_unitario)
     valor_unitario_formatado.short_description = 'Valor Unitário'
     def valor_pago_formatado(self,obj):
-        return formatar_iene(obj.valor_pago)
+        return formatar_iene(obj.pedido.valor_pago)
     valor_pago_formatado.short_description = 'Valor Pago'
 
     def status_pagamento_colorido(self,obj):
-        if obj.status_pagamento == 'AGUARDANDO':
+        if obj.pedido.status_pagamento == 'AGUARDANDO':
             return mark_safe('<span style="color:red;font-weight:bold;">Aguardando Pagamento</span>')
-        elif obj.status_pagamento == 'PARCIAL':
+        elif obj.pedido.status_pagamento == 'PARCIAL':
             return mark_safe('<span style="color:orange;font-weight:bold;">Pagamento Parcial</span>')
         return mark_safe('<span style="color:green;font-weight:bold;">Pago</span>')
 
@@ -103,18 +101,22 @@ class ItemPedidoInline(admin.TabularInline):
                 ativo=True
             ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    def save_models(self, request, obj, form, formset, change):
+        print('ITEM SALVO',obj)
+        print('PEDIDO RELACIONADO',obj.pedido)
+        super().save_model(request,obj,change)
 
 #===================== PEDIDO ========================
 
 class PedidoAdmin(admin.ModelAdmin):
-    inlines = [ItemPedidoInline]
     list_display = (
         'cliente',
         'valor_total_formatado',
         'valor_pago_formatado',
         'data_pedido_formatada',
     )
-    readonly_fields = ('data_pedido',)
+    inlines = [ItemPedidoInline]
+    readonly_fields = ('data_pedido','valor_total_formatado',)
     search_fields = ('cliente__nome',)
 
     def get_fields(self, request, obj=None):
@@ -129,11 +131,14 @@ class PedidoAdmin(admin.ModelAdmin):
         return '-'
     data_pedido_formatada.short_description = 'Data do Pedido'
     def valor_total_formatado(self,obj):
-        return formatar_iene(obj.valor_total())
+        return formatar_iene(obj.valor_total)
     valor_total_formatado.short_description = 'Valor Total'
     def valor_pago_formatado(self,obj):
-        return formatar_iene(obj.valor_pago_total())
+        return formatar_iene(obj.valor_pago)
     valor_pago_formatado.short_description = 'Valor Pago'
+    def get_queryset(self,request):
+        return super().get_queryset(request).prefetch_related('itens')
+
 
 #===================== LOTE PRODUTO =========================
 

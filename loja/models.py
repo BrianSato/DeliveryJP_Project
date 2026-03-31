@@ -37,13 +37,15 @@ class Cliente(models.Model):
         )
         return sum(i.valor_total_item() for i in itens)
 
-    @property
     def tem_atraso(self):
-        return Pedido.objects.filter(
-            cliente = self,
-            data_limite_pagamento__lt=date.today(),
-            status_pagamento = self
-        ).exists()
+        for pedido in self.pedidos.all():
+            if(
+                pedido.data_limite_pagamento and
+                pedido.data_limite_pagamento < date.today() and
+                pedido.status_pagamento != 'PAGO'
+            ):
+                return True
+        return False
 
     def __str__(self):
         return self.nome
@@ -68,7 +70,7 @@ class Produto(models.Model):
         )['total'] or 0
 
     def status_validade(self):
-        lotes = self.loteproduto_set.all()
+        lotes = self.lotes.all()
 
         if not lotes.exists() or lotes.count() == 0:
             return "SEM_VALIDADE"
@@ -158,7 +160,8 @@ class Pedido(models.Model):
 
     @property
     def valor_total(self):
-        return sum(item.valor_total_item() for item in self.itens.all())
+        total =  sum(item.valor_total_item() for item in self.itens.all())
+        return total
 
     @property
     def valor_restante(self):
@@ -241,6 +244,9 @@ class ItemPedido(models.Model):
         if is_new and self.tipo == 'ESTOQUE' and self.produto and self.quantidade:
             if self.quantidade > self.produto.estoque_disponivel:
                 raise ValidationError({'quantidade':'Estoque insuficiente'})
+        #GARANTE VALOR UNITÁRIO
+        if self.produto and (not self.valor_unitario or self.valor_unitario == 0):
+            self.valor_unitario = self.produto.preco_unitario
         #VALIDA MODEL
         self.full_clean()
         #SALVA PRIMEIRO

@@ -5,7 +5,8 @@ def formatar_iene(valor):
     return f'¥{valor:,.0f}'
 
 def criar_lote(produto,quantidade,data_validade):
-    return produto.objects.create(
+    from loja.models import LoteProduto
+    return LoteProduto.objects.create(
         produto=produto,
         quantidade=quantidade,
         data_validade=data_validade if data_validade else None

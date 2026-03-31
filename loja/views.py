@@ -108,7 +108,7 @@ def produto_detail(request,id):
 
         return redirect('produto_detail',produto_id= produto.id)
 
-    lotes= produto.loteproduto_set.filter(quantidade__gt=0).order_by('data_validade')
+    lotes= produto.lotes.filter(quantidade__gt=0).order_by('data_validade')
 
     return render(request,'loja/produto_detail.html',{
         'produto':produto,
