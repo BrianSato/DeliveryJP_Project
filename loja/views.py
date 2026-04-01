@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from pyexpat.errors import messages
+from django.contrib import messages
 
 from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
 from loja.utils import criar_lote
@@ -37,7 +37,7 @@ def cliente_create(request):
         #Cria e salva no banco
         Cliente.objects.create(nome=nome,telefone=telefone,endereco=endereco)
 
-        return redirect('cliente_create')
+        return redirect('cliente_list')
 
     return render(request,'loja/cliente.html')
 
@@ -157,11 +157,71 @@ def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
 
     if request.method == 'POST':
-        # ATUALIZAR PAGAMENTO
+        action = request.POST.get('action')
+        # CRIA NOVO ITEM
+        if action == 'adicionar_item':
+            # BLOQUEIA CRIAÇÃO DE PEDIDO JÁ FEITO
+            if pedido.status == 'FECHADO':
+                messages.error(request, 'Pedido já finalizado')
+                return redirect('pedido_detail', pedido_id=pedido.id)
+
+            quantidade = int(request.POST.get('quantidade') or 0)
+            tipo = request.POST.get('tipo')
+
+            if tipo == 'ESTOQUE':
+                produto_id = request.POST.get('produto')
+                if produto_id:
+                    produto = Produto.objects.get(id=produto_id)
+
+                    ItemPedido.objects.create(
+                        pedido=pedido,
+                        produto=produto,
+                        quantidade=quantidade,
+                        valor_unitario=produto.preco_unitario,
+                        tipo=tipo
+                    )
+            elif tipo == 'ENCOMENDA':  # ENCOMENDA
+                nome_produto = request.POST.get('nome_produto')
+                valor_unitario = request.POST.get('valor_unitario')
+                if nome_produto and valor_unitario:
+                    ItemPedido.objects.create(
+                        pedido=pedido,
+                        nome_produto=nome_produto,
+                        quantidade=quantidade,
+                        valor_unitario=valor_unitario,
+                        tipo=tipo
+                    )
+
+            return redirect('pedido_detail', pedido_id=pedido.id)
+        # PAGAMENTOS
+        if action == 'atualizar_pagamento':
+            valor_pago = request.POST.get('valor_pago')
+            forma_pagamento = request.POST.get('forma_pagamento')
+            # ATUALIZAR PAGAMENTO
+            if valor_pago:
+                pedido.valor_pago += Decimal(valor_pago)
+            # FORMA DE PAGAMENTO
+            if forma_pagamento:
+                pedido.forma_pagamento = forma_pagamento
+            pedido.save()
+            return redirect('pedido_detail', pedido_id=pedido.id)
+        #FINALIZAR PEDIDO E MUDA STATUS PARA FECHADO
+        if action == 'finalizar':
+            if pedido.status != 'FECHADO':
+                pedido.status = 'FECHADO'
+                pedido.save()
+            return redirect('pedido_detail', pedido_id=pedido.id)
+
+    if request.method == 'POST':
         valor_pago = request.POST.get('valor_pago')
+        forma_pagamento = request.POST.get('forma_pagamento')
+        # ATUALIZAR PAGAMENTO
         if valor_pago:
             pedido.valor_pago += Decimal(valor_pago)
-            pedido.save()
+        # FORMA DE PAGAMENTO
+        if forma_pagamento:
+            pedido.forma_pagamento = forma_pagamento
+        pedido.save()
 
         #ATUALIZAR STATUS DO ITEM
         item_id = request.POST.get('item_id')
@@ -179,7 +239,7 @@ def pedido_detail(request,pedido_id):
             item.status_item = novo_status
             item.save()
 
-    #CRIA NOVO ITEM
+        #CRIA NOVO ITEM
         quantidade = int(request.POST.get('quantidade')or 0)
         tipo= request.POST.get('tipo')
 

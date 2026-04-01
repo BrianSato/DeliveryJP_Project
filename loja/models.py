@@ -1,11 +1,9 @@
-from xml.etree.ElementInclude import default_loader
 
 from django.core.exceptions import ValidationError
 from django.db import models
 from datetime import date, timedelta
 
 from django.db.models import Sum
-from django.template.defaulttags import lorem
 from django.utils.safestring import mark_safe
 from loja.utils import baixar_estoque
 
@@ -157,6 +155,7 @@ class Pedido(models.Model):
     valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     forma_pagamento = models.CharField(max_length=15, choices=FORMA_PAGAMENTO, null=True, blank=True)
     data_limite_pagamento = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=[('ABERTO','Aberto'),('FECHADO','Fechado')], default='ABERTO')
 
     @property
     def valor_total(self):
