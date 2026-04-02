@@ -196,15 +196,18 @@ def pedido_detail(request,pedido_id):
         # PAGAMENTOS
         if action == 'atualizar_pagamento':
             valor_pago = request.POST.get('valor_pago')
-            forma_pagamento = request.POST.get('forma_pagamento')
             # ATUALIZAR PAGAMENTO
             if valor_pago:
                 pedido.valor_pago += Decimal(valor_pago)
+                pedido.save()
+                return redirect('pedido_detail', pedido_id=pedido.id)
+        if action == 'forma_pagamento':
+            forma_pagamento = request.POST.get('forma_pagamento')
             # FORMA DE PAGAMENTO
             if forma_pagamento:
                 pedido.forma_pagamento = forma_pagamento
-            pedido.save()
-            return redirect('pedido_detail', pedido_id=pedido.id)
+                pedido.save()
+                return redirect('pedido_detail', pedido_id=pedido.id)
         #FINALIZAR PEDIDO E MUDA STATUS PARA FECHADO
         if action == 'finalizar':
             if pedido.status != 'FECHADO':

@@ -52,19 +52,23 @@
             </div>
             <label>Quantidade:</label>
             <input type="number" name="quantidade" required>
-
+            <button name='action' value ='adicionar_item' class="menu-btn">
+                ➕ Adicionar Item
+            </button>
+        </form>
+        <form method="post" style="margin-top:10px">
+            {% csrf_token %}
             <label>Forma de Pagamento:</label>
             <select name="forma_pagamento" required>
                 <option value="DINHEIRO">Dinheiro</option>
                 <option value="CARTAO">Cartão</option>
                 <option value="TRANSFERENCIA">Transferência</option>
             </select>
-
-            <button name='action' value ='adicionar_item' class="menu-btn">
-                ➕ Adicionar Item
+            <button type="submit" class="menu-btn">
+                Definir Forma de Pagamento
             </button>
         </form>
-    {% endif %}
+        {% endif %}
         <form method="post" style="margin-top: 10px">
             {% csrf_token %}
             <input type="hidden" name="produto_id" value="{{ produto.id }}">
