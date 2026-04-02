@@ -147,9 +147,15 @@ def pedido_create(request):
 @login_required
 def pedido_list(request):
     pedidos = Pedido.objects.all()
-
+    query = request.GET.get('q')
+    if query:
+        pedidos = pedidos.filter(
+            Q(cliente__nome__icontains = query) |
+            Q(cliente__telefone__icontains = query)
+        )
     return render(request,'loja/pedido_list.html',{
         'pedidos':pedidos,
+        'query':query
     })
 
 @login_required
@@ -200,6 +206,7 @@ def pedido_detail(request,pedido_id):
             if valor_pago:
                 pedido.valor_pago += Decimal(valor_pago)
                 pedido.save()
+                pedido.verificar_e_creditar_pontos()
                 return redirect('pedido_detail', pedido_id=pedido.id)
         if action == 'forma_pagamento':
             forma_pagamento = request.POST.get('forma_pagamento')
@@ -208,6 +215,20 @@ def pedido_detail(request,pedido_id):
                 pedido.forma_pagamento = forma_pagamento
                 pedido.save()
                 return redirect('pedido_detail', pedido_id=pedido.id)
+        if action == 'usar_cupom':
+            if pedido.status == 'FECHADO':
+                messages.error(request,'Pedido já finalizado')
+                return redirect('pedido_detail', pedido_id=pedido.id)
+
+            cliente = pedido.cliente
+
+            if cliente.cupons > 0 and not pedido.cupom_usado:
+                cliente.cupons -= 1
+                cliente.save()
+
+                pedido.desconto = 1000
+                pedido.cupom_usado = True
+                pedido.save()
         #FINALIZAR PEDIDO E MUDA STATUS PARA FECHADO
         if action == 'finalizar':
             if pedido.status != 'FECHADO':

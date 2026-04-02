@@ -7,13 +7,17 @@ from django.db.models import Sum
 from django.utils.safestring import mark_safe
 from loja.utils import baixar_estoque
 
-
+#==================== CONSTANTES =======================
+VALOR_POR_PONTO = 1000
+PONTOS_POR_CUPOM = 50
+VALOR_CUPOM = 1000
 #===================== CLIENTES =========================
 class Cliente(models.Model):
     nome = models.CharField(max_length=100)
     telefone = models.CharField(max_length=20, unique=True)
     endereco = models.CharField(max_length=200)
     pontos = models.IntegerField(default=0)
+    cupons = models.IntegerField(default=0)
     validade_pontos = models.DateField(blank=True,null=True)
     data_cadastro = models.DateField(auto_now_add=True)
 
@@ -156,11 +160,14 @@ class Pedido(models.Model):
     forma_pagamento = models.CharField(max_length=15, choices=FORMA_PAGAMENTO, null=True, blank=True)
     data_limite_pagamento = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[('ABERTO','Aberto'),('FECHADO','Fechado')], default='ABERTO')
+    pontos_creditados = models.BooleanField(default=False)
+    cupom_usado = models.BooleanField(default=False)
+    desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     @property
     def valor_total(self):
         total =  sum(item.valor_total_item() for item in self.itens.all())
-        return total
+        return max(total - self.desconto, 0)
 
     @property
     def valor_restante(self):
@@ -174,6 +181,27 @@ class Pedido(models.Model):
             return 'PARCIAL'
         else:
             return 'PAGO'
+
+    def verificar_e_creditar_pontos(self):
+        if(
+            self.valor_pago >= self.valor_total and
+            not self.pontos_creditados
+        ):
+            pontos = int(self.valor_total/VALOR_POR_PONTO)
+
+            if pontos > 0:
+                cliente = self.cliente
+                self.cliente.pontos += pontos
+
+                while cliente.pontos >= PONTOS_POR_CUPOM:
+                    cliente.pontos -= PONTOS_POR_CUPOM
+                    cliente.cupons += 1
+
+                self.cliente.save()
+
+            self.pontos_creditados = True
+            self.save()
+
     def atualizar_data_limite(self):
         if self.valor_pago == 0:
             self.data_limite_pagamento = date.today() + timedelta(days=1)
@@ -209,6 +237,7 @@ class ItemPedido(models.Model):
     quantidade = models.IntegerField(default=0)
     valor_unitario = models.DecimalField(max_digits=10, decimal_places=2,default=0)
     status_item = models.CharField(max_length=15,choices=STATUS_ITEM,default='PENDENTE')
+
 
     def valor_total_item(self):
         return self.valor_unitario * self.quantidade
