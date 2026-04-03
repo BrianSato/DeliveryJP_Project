@@ -9,7 +9,7 @@ from loja.utils import baixar_estoque
 
 #==================== CONSTANTES =======================
 VALOR_POR_PONTO = 1000
-PONTOS_POR_CUPOM = 50
+PONTOS_POR_CUPOM = 55
 VALOR_CUPOM = 1000
 #===================== CLIENTES =========================
 class Cliente(models.Model):
