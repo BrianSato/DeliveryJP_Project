@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import date, timedelta
 from decimal import Decimal
-from gc import get_objects
 
-from django.db.models import Q
+from django.http import HttpResponse
+from django.utils import timezone
+from django.db.models import Q, Sum
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
@@ -10,12 +11,6 @@ from django.contrib import messages
 
 from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
 from loja.utils import criar_lote
-
-
-#Home protegida
-@login_required
-def home(request):
-    return render(request,'loja/home.html')
 
 #Tela de login personalizada
 class MyloginView(LoginView):
@@ -25,6 +20,43 @@ class MyloginView(LoginView):
     #Sempre redireciona para /cliente/ após login
     def get_success_url(self):
         return '/cliente/'
+#Home protegida
+@login_required
+def home(request):
+    hoje = timezone.now().date()
+    limite = hoje + timedelta(days=7)
+    vencidos_qtd = LoteProduto.objects.filter(data_validade__lt=hoje).count()
+    vencendo_qtd = LoteProduto.objects.filter(data_validade__range=(hoje,limite)).count()
+
+    return render(request, 'loja/home.html', {
+        'vencidos_qtd': vencidos_qtd,
+        'vencendo_qtd': vencendo_qtd
+    })
+#Tela de Produtos Vencidos
+def produtos_vencidos(request):
+    hoje = timezone.now().date()
+    vencidos = (LoteProduto.objects
+                .filter(data_validade__lt=hoje)
+                .values('produto__id','produto__nome_produto')
+                .annotate(total=Sum('quantidade'))
+                .order_by('produto__nome_produto')
+    )
+    return render(request,'loja/estoque_vencidos.html',{
+        'vencidos':vencidos,
+    })
+#Tela de Produtos Vencendo
+def produtos_vencendo(request):
+    hoje = timezone.now().date()
+    vencendo = (LoteProduto.objects
+                .filter(data_validade__range=(hoje, hoje + timedelta(days=7)))
+                .values('produto__id', 'produto__nome_produto')
+                .annotate(total=Sum('quantidade'))
+                .order_by('produto__nome_produto')
+    )
+
+    return render(request, 'loja/estoque_vencendo.html', {
+        'vencendo': vencendo,
+    })
 
 #Tela de Novo Cliente
 @login_required
@@ -55,6 +87,7 @@ def cliente_list(request):
         'clientes':clientes,
         'query':query
     })
+#Tela da lista de Cliente
 @login_required
 def cliente_detail(request,id):
     cliente = get_object_or_404(Cliente, id=id)
@@ -64,10 +97,11 @@ def cliente_detail(request,id):
         'cliente':cliente,
         'pedidos':pedidos,
     })
+#Tela do Menu de Produtos
 @login_required
 def produto_menu(request):
     return render(request,'loja/produto_menu.html')
-
+#Tela de Novo Produto
 @login_required
 def produto_create(request):
     if request.method == 'POST':
@@ -83,7 +117,7 @@ def produto_create(request):
         return redirect('produto_list')
 
     return render(request,'loja/produto_create.html')
-
+#Tela da Lista de Produtos
 @login_required
 def produto_list(request):
     produtos = Produto.objects.all()
@@ -96,10 +130,23 @@ def produto_list(request):
         'produtos':produtos,
         'query':query,
     })
-
+#Tela de Detalhes do Produtos
 @login_required
 def produto_detail(request,id):
     produto = get_object_or_404(Produto, id=id)
+    hoje = timezone.now().date()
+    filtro = request.GET.get('filtro','')
+    lotes = produto.lotes.all()
+
+    if filtro == 'vencidos':
+        lotes = lotes.filter(data_validade__lt=hoje)
+    elif filtro == 'vencendo':
+        lotes = lotes.filter(data_validade__range=(hoje, hoje+timedelta(days=7)))
+    else:
+        lotes = lotes.filter(quantidade__gt=0)
+
+    lotes = lotes.order_by('data_validade')
+
     if request.method == 'POST':
         quantidade = request.POST.get('quantidade')
         data_validade = request.POST.get('data_validade')
@@ -108,13 +155,12 @@ def produto_detail(request,id):
 
         return redirect('produto_detail',produto_id= produto.id)
 
-    lotes= produto.lotes.filter(quantidade__gt=0).order_by('data_validade')
-
     return render(request,'loja/produto_detail.html',{
         'produto':produto,
-        'lotes':lotes
+        'lotes':lotes,
+        'filtro':filtro
     })
-
+#Tela de novo Lote do Produto
 @login_required
 def lote_create(request,produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
@@ -129,6 +175,7 @@ def lote_create(request,produto_id):
     return render(request,'loja/lote_create.html',{
         'produto': produto
     })
+#Tela de Novo Pedido
 @login_required
 def pedido_create(request):
     if request.method == 'POST':
@@ -143,7 +190,7 @@ def pedido_create(request):
     return render(request,'loja/pedido_create.html',{
         'clientes':clientes
     })
-
+#Tela de Lista de Pedidos
 @login_required
 def pedido_list(request):
     pedidos = Pedido.objects.all()
@@ -157,7 +204,7 @@ def pedido_list(request):
         'pedidos':pedidos,
         'query':query
     })
-
+#Tela de Detalhes do Pedido
 @login_required
 def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)

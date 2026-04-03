@@ -3,6 +3,16 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
+    <div style="background:#ffdddd; padding:10px; margin-bottom:10px;">
+      <strong>🔴 Produtos Vencidos:</strong> {{ vencidos_qtd }}
+      <a href="{% url 'estoque_vencidos' %}">Ver</a>
+    </div>
+
+    <div style="background:#fff3cd; padding:10px;">
+      <strong>🟡 Produtos Vencendo:</strong> {{ vencendo_qtd }}
+      <a href="{% url 'estoque_vencendo' %}">Ver</a>
+    </div>
+
     <div style="width: 100%; max-width: 400px">
         <h2 style="text-align: center;">Menu Principal</h2>
         <button class="menu-btn" onclick = "window.location.href='{% url 'cliente_list'%}'">Clientes</button>

@@ -5,9 +5,7 @@ from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
-    #home
-    path('', views.home, name='home'),
-    #login
+#login
     path(
         'login/',
          auth_views.LoginView.as_view(
@@ -16,6 +14,12 @@ urlpatterns = [
          ),
         name='login'
     ),
+    #home
+    path('', views.home, name='home'),
+    # lista de produtos vencendo
+    path('estoque_vencendo', views.produtos_vencendo, name='estoque_vencendo'),
+    #lista de produtos vencidos
+    path('estoque_vencidos', views.produtos_vencidos, name='estoque_vencidos'),
     # lista de clientes
     path('cliente/', views.cliente_list, name='cliente_list'),
     # cliente novo
