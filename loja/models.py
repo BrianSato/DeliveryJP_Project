@@ -14,7 +14,7 @@ VALOR_CUPOM = 1000
 #===================== CLIENTES =========================
 class Cliente(models.Model):
     nome = models.CharField(max_length=100)
-    telefone = models.CharField(max_length=11, unique=True)
+    telefone = models.CharField(max_length=20, unique=True)
     endereco = models.CharField(max_length=200)
     pontos = models.IntegerField(default=0)
     cupons = models.IntegerField(default=0)
