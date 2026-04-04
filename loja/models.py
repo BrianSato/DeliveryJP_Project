@@ -184,8 +184,8 @@ class Pedido(models.Model):
 
     @property
     def valor_restante(self):
-        if self.valor_pago > self.valor_total:
-            raise ValidationError('O valor informado é maior do que o valor restante de pagamento')
+        #if self.valor_pago > self.valor_total:
+        #    raise ValidationError('O valor informado é maior do que o valor restante de pagamento')
 
         return self.valor_total - self.valor_pago
 
