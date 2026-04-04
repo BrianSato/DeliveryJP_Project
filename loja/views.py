@@ -1,3 +1,4 @@
+import re
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -63,11 +64,26 @@ def produtos_vencendo(request):
 def cliente_create(request):
     if request.method == 'POST':
         nome = request.POST.get('nome')
-        telefone = request.POST.get('telefone')
         endereco = request.POST.get('endereco')
+        telefone = request.POST.get('telefone','')
+        telefone_limpo = re.sub(r'\D','', telefone)
+        if len(telefone_limpo) != 11:
+            return render(request,'loja/cliente.html',{
+                'erro': 'Este campo só aceita 11 NÚMEROS',
+                'nome': nome,
+                'telefone':telefone,
+                'endereco': endereco
+            })
+        if Cliente.objects.filter(telefone=telefone_limpo).exists():
+            return render(request,'loja/cliente.html',{
+                'erro':'Este telefone já está cadastrado',
+                'nome': nome,
+                'telefone':telefone,
+                'endereco': endereco
+            })
 
         #Cria e salva no banco
-        Cliente.objects.create(nome=nome,telefone=telefone,endereco=endereco)
+        Cliente.objects.create(nome=nome,telefone=telefone_limpo,endereco=endereco)
 
         return redirect('cliente_list')
 

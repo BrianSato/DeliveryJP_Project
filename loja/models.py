@@ -14,12 +14,20 @@ VALOR_CUPOM = 1000
 #===================== CLIENTES =========================
 class Cliente(models.Model):
     nome = models.CharField(max_length=100)
-    telefone = models.CharField(max_length=20, unique=True)
+    telefone = models.CharField(max_length=11, unique=True)
     endereco = models.CharField(max_length=200)
     pontos = models.IntegerField(default=0)
     cupons = models.IntegerField(default=0)
     validade_pontos = models.DateField(blank=True,null=True)
     data_cadastro = models.DateField(auto_now_add=True)
+
+    @property
+    def telefone_formatado(self):
+
+        if self.telefone and len(self.telefone) == 11:
+            return f"{self.telefone[:3]}-{self.telefone[3:7]}-{self.telefone[7:]}"
+
+        return self.telefone
 
     @property
     def proxima_data_limite(self):
@@ -48,6 +56,11 @@ class Cliente(models.Model):
             ):
                 return True
         return False
+
+    def save(self,*args,**kwargs):
+        if self.telefone:
+            self.telefone = self.telefone.replace('-','')
+        super().save(*args,**kwargs)
 
     def __str__(self):
         return self.nome
@@ -171,6 +184,9 @@ class Pedido(models.Model):
 
     @property
     def valor_restante(self):
+        if self.valor_pago > self.valor_total:
+            raise ValidationError('O valor informado é maior do que o valor restante de pagamento')
+
         return self.valor_total - self.valor_pago
 
     @property
