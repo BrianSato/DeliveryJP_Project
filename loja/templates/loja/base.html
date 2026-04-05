@@ -52,7 +52,23 @@
 </head>
 <body>
 
-    <!---BLOCO DE LOGO : PODE SER SOBRESCRITO SE NECESSÁRIO --->
+    <!---BLOCO DE MENSAGENS --->
+    {% if messages %}
+        {% for message in messages %}
+            <div style="
+                padding:10px;
+                margin:10px;
+                border-radius:5px;
+                text-align:center;
+                font-weight:bold;
+                background-color:{% if message.tags == 'error' %}#ffcccc{% else %}#ccffcc{% endif %};
+            ">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!---BLOCO DE LOGO --->
     {% block logo %}
     <img src = "{% static 'loja/img/logo.png'%}" alt = "logo" class = "logo">
     {% endblock %}

@@ -363,9 +363,11 @@ def pedido_encomenda_detail(request, pedido_id):
         novo_status = request.POST.get("status_encomenda")
 
         if novo_status:
+            permitido, mensagem = pedido.pode_mudar_para(novo_status)
+
             #  REGRA DE NEGÓCIO
-            if not pedido.pode_mudar_para(novo_status):
-                messages.error(request,"Transição inválida ou pagamento pendente")
+            if not permitido:
+                messages.error(request,mensagem)
                 return redirect('pedido_encomenda_detail', pedido_id=pedido_id)
 
             pedido.status_encomenda = novo_status

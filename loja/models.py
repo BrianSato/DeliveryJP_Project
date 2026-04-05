@@ -249,14 +249,19 @@ class Pedido(models.Model):
         }
         return fluxo.get(self.status_encomenda,[])
     def pode_mudar_para(self,novo_status):
-        #regra de fluxo
-        if novo_status not in self.proximo_status_permitido:
-            return False
-        #regra de pagamento
-        if novo_status in ['ENVIADO','ENTREGUE']:
-            if self.status_pagamento != 'PAGO':
-                return False
-        return True
+        #FLUXO BASE
+        fluxo = self.proximo_status_permitido
+
+        #REGRA DE FLUXO
+        if novo_status not in fluxo:
+            return False, "Transição inválida de status"
+
+        #REGRA DE PAGAMENTO
+        if self.valor_pago < self.valor_total:
+            if novo_status in ['ENVIADO','ENTREGUE']:
+                return False,"Pagamento ainda não foi concluido"
+
+        return True, ""
 
 #===================== ITEM PEDIDO =========================
 
