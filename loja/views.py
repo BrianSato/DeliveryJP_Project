@@ -130,21 +130,29 @@ def produto_create(request):
             preco_unitario=preco if preco else 0
         )
 
-        return redirect('produto_list')
+        return redirect('produto_estoque_list')
 
     return render(request,'loja/produto_create.html')
-#Tela da Lista de Produtos
+#Tela da Lista de Produtos no Estoque
 @login_required
-def produto_list(request):
+def produto_estoque_list(request):
     produtos = Produto.objects.all()
     query = request.GET.get('q')
     if query:
         produtos = produtos.filter(
             Q(nome_produto__icontains=query)
         )
-    return render(request,'loja/produto_list.html',{
+    return render(request,'loja/produto_estoque_list.html',{
         'produtos':produtos,
         'query':query,
+    })
+#Tela da Lista de Produtos Encomendados
+@login_required
+def produto_encomenda_list(request):
+    itens = ItemPedido.objects.filter(tipo='ENCOMENDA')
+
+    return render(request,'loja/produto_encomenda_list.html',{
+        'itens': itens
     })
 #Tela de Detalhes do Produtos
 @login_required
@@ -310,22 +318,6 @@ def pedido_detail(request,pedido_id):
             pedido.forma_pagamento = forma_pagamento
         pedido.save()
 
-        #ATUALIZAR STATUS DO ITEM
-        item_id = request.POST.get('item_id')
-        novo_status = request.POST.get('status_item')
-
-        if item_id and novo_status:
-            item= ItemPedido.objects.get(id=item_id)
-
-            #REGRA DE NEGÓCIO
-            if novo_status in ['ENVIADO','ENTREGUE']:
-                if pedido.valor_pago < pedido.valor_total:
-                    messages.error(request, 'Só é possível enviar após pagamento total')
-                    return redirect('pedido_detail',pedido_id= pedido.id)
-
-            item.status_item = novo_status
-            item.save()
-
         #CRIA NOVO ITEM
         quantidade = int(request.POST.get('quantidade')or 0)
         tipo= request.POST.get('tipo')
@@ -361,4 +353,29 @@ def pedido_detail(request,pedido_id):
     return render(request,'loja/pedido_detail.html',{
         'pedido':pedido,
         'produtos':produtos
+    })
+@login_required
+def pedido_encomenda_detail(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    itens = pedido.itens.filter(tipo='ENCOMENDA')
+
+    if request.method == "POST":
+        novo_status = request.POST.get("status_encomenda")
+
+        if novo_status:
+            #  REGRA DE NEGÓCIO
+            if not pedido.pode_mudar_para(novo_status):
+                messages.error(request,"Transição inválida ou pagamento pendente")
+                return redirect('pedido_encomenda_detail', pedido_id=pedido_id)
+
+            pedido.status_encomenda = novo_status
+            pedido.save()
+
+            messages.success(request, "Status atualizado!")
+
+        return redirect('pedido_encomenda_detail', pedido_id=pedido.id)
+
+    return render(request, 'loja/pedido_encomenda_detail.html', {
+        'pedido': pedido,
+        'itens': itens
     })

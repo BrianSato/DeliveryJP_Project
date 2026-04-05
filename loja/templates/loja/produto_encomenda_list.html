@@ -1,0 +1,67 @@
+{% extends "loja/base.html" %}
+{% load humanize %}
+
+{% block title %}Lista de Produtos{% endblock %}
+
+{% block content %}
+    <div style="width: 100%; max-width: 600px; margin: 0 auto;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Produtos Encomendados</h2>
+
+        <table style="width:100%;border-collapse: collapse; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <thead style="background-color: #4CAF50; color:white">
+                <tr>
+                    <th>Cliente</th>
+                    <th>Data Encomenda</th>
+                    <th>Status Pagamento</th>
+                    <th>Status Entrega</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in itens %}
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px;">
+                        <a href="{% url 'pedido_encomenda_detail' item.pedido.id %}">
+                            {{ item.pedido.cliente.nome }}
+                        </a>
+                    </td>
+                    <td style="padding: 10px; text-align: left;">{{ item.pedido.data_pedido }}</td>
+                    <td style="padding: 10px; text-align: leftt;">
+                        {%if item.pedido.status_pagamento == "AGUARDANDO" %}
+                            🔴 Aguardando
+                        {% elif item.pedido.status_pagamento == "PARCIAL" %}
+                            🟡 Parcial
+                        {% elif item.pedido.status_pagamento == "PAGO" %}
+                            ✅ Pago
+                        {% endif %}
+                        </td>
+                    <td style="padding: 10px; text-align: right;">
+                        {% if item.pedido.status_encomenda == "PENDENTE" %}
+                            🔴 Aguardando
+                        {% elif item.pedido.status_encomenda == "PEDIDO" %}
+                            🟡 Pedido
+                        {% elif item.pedido.status_encomenda == "CHEGOU" %}
+                            🔵 Chegou
+                        {% elif item.pedido.status_encomenda == "ENTREGUE" %}
+                            🟢 Entregue
+                        {% else %}
+                            ⚪ {{ item.pedido.get_status_encomenda_display }}
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px;">
+                        Nenhuma encomenda encontrada
+                    </td>
+                </tr>
+
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="margin-top: 20px; text-align: center;">
+            <a href="{% url 'home' %}" class="menu-btn">🔙 Voltar</a>
+        </div>
+    </div>
+
+{% endblock %}

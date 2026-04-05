@@ -30,8 +30,10 @@ urlpatterns = [
     path('produto/', views.produto_menu, name='produto_menu'),
     # produto novo
     path('produto/novo/', views.produto_create, name='produto_create'),
-    #lista de produtos
-    path('produto/lista/', views.produto_list, name='produto_list'),
+    #lista de produtos no estoque
+    path('produto/lista_estoque/', views.produto_estoque_list, name='produto_estoque_list'),
+    # lista de produtos encomendados
+    path('produto/lista_encomenda/', views.produto_encomenda_list, name='produto_encomenda_list'),
     #detalhes do produto
     path('produto/<int:id>/', views.produto_detail, name='produto_detail'),
     #criar lote do produto
@@ -42,4 +44,6 @@ urlpatterns = [
     path('pedido/<int:pedido_id>/', views.pedido_detail, name='pedido_detail'),
     #criar novo pedido
     path('pedido/novo/', views.pedido_create, name='pedido_create'),
+    #detalhes da encomenda
+    path('pedido/encomenda/<int:pedido_id>/', views.pedido_encomenda_detail, name='pedido_encomenda_detail'),
 ]

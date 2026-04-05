@@ -53,7 +53,7 @@ class ItemPedidoInline(admin.TabularInline):
         'valor_pago_formatado',
         'status_pagamento_colorido',
         'data_limite_formatada',
-        'status_item_colorido',)
+        )
 
     can_delete = True
 
@@ -72,22 +72,6 @@ class ItemPedidoInline(admin.TabularInline):
         return mark_safe('<span style="color:green;font-weight:bold;">Pago</span>')
 
     status_pagamento_colorido.short_description = 'Status Pagamento'
-
-    def status_item_colorido(self, obj):
-        if obj.status_item == 'PENDENTE':
-            return mark_safe('<span style="color:gray;font-weight:bold;">Aguardando Pedido</span>')
-        elif obj.status_item == 'PEDIDO':
-            return mark_safe('<span style="color:blue;font-weight:bold;">Pedido Realizado</span>')
-        elif obj.status_item == 'CHEGOU':
-            return mark_safe('<span style="color:purple;font-weight:bold;">Pedido Chegou</span>')
-        elif obj.status_item == 'ENVIADO':
-            return mark_safe('<span style="color:orange;font-weight:bold;">Pedido Enviado</span>')
-        elif obj.status_item == 'ENTREGUE':
-            return mark_safe('<span style="color:green;font-weight:bold;">Pedido Entregue</span>')
-
-        return mark_safe('<span style="color:red;font-weight:bold;">Cancelado</span>')
-
-    status_item_colorido.short_description = 'Status Item'
 
     def data_limite_formatada(self,obj):
         if obj.data_limite_pagamento:
@@ -114,6 +98,7 @@ class PedidoAdmin(admin.ModelAdmin):
         'valor_total_formatado',
         'valor_pago_formatado',
         'data_pedido_formatada',
+        'status_encomenda_colorido',
     )
     inlines = [ItemPedidoInline]
     readonly_fields = ('data_pedido','valor_total_formatado',)
@@ -130,6 +115,20 @@ class PedidoAdmin(admin.ModelAdmin):
             return obj.data_pedido.strftime('%d/%m/%Y')
         return '-'
     data_pedido_formatada.short_description = 'Data do Pedido'
+    def status_encomenda_colorido(self, obj):
+        if obj.status_encomenda == 'PENDENTE':
+            return mark_safe('<span style="color:gray;font-weight:bold;">Aguardando Pedido</span>')
+        elif obj.status_encomenda == 'PEDIDO':
+            return mark_safe('<span style="color:blue;font-weight:bold;">Pedido Realizado</span>')
+        elif obj.status_encomenda == 'CHEGOU':
+            return mark_safe('<span style="color:purple;font-weight:bold;">Pedido Chegou</span>')
+        elif obj.status_encomenda == 'ENVIADO':
+            return mark_safe('<span style="color:orange;font-weight:bold;">Pedido Enviado</span>')
+        elif obj.status_encomenda == 'ENTREGUE':
+            return mark_safe('<span style="color:green;font-weight:bold;">Pedido Entregue</span>')
+
+        return mark_safe('<span style="color:red;font-weight:bold;">Cancelado</span>')
+    status_encomenda_colorido.short_description = 'Status Item'
     def valor_total_formatado(self,obj):
         return formatar_iene(obj.valor_total)
     valor_total_formatado.short_description = 'Valor Total'

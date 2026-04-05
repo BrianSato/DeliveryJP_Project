@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // 🔥 bloqueia letras na digitação
+    //  bloqueia letras na digitação
     telefoneInput.addEventListener('keypress', function (e) {
         if (!/[0-9]/.test(e.key)) {
             e.preventDefault();

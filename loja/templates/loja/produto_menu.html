@@ -4,8 +4,11 @@
 
 {% block content %}
     <div style="width: 100%; max-width: 400px;">
-        <button class="menu-btn" onclick="location.href='{%  url 'produto_list' %}'">
-        📦 Lista de Produtos
+        <button class="menu-btn" onclick="location.href='{%  url 'produto_estoque_list' %}'">
+        📦 Lista de Produtos em Estoque
+        </button>
+        <button class="menu-btn" onclick="location.href='{%  url 'produto_encomenda_list' %}'">
+        📦 Lista de Produtos Encomendados
         </button>
         <button class="menu-btn" onclick="location.href='{%  url 'produto_create' %}'">
          ➕ Novos Produtos

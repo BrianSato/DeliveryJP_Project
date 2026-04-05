@@ -79,7 +79,7 @@ class Produto(models.Model):
     def total_encomendados(self):
         return self.itens_pedido.filter(
             tipo='ENCOMENDA',
-            status_item__in=['PEDIDO','ENVIADO','CHEGOU','ENTREGUE']
+            status_encomenda__in=['PEDIDO','ENVIADO','CHEGOU','ENTREGUE']
         ).aggregate(
             total=models.Sum('quantidade')
         )['total'] or 0
@@ -166,13 +166,21 @@ class Pedido(models.Model):
         ('CARTAO', 'Cartão'),
         ('TRANSFERENCIA', 'Transferência'),
     ]
-
+    STATUS_ENCOMENDA = [
+        ('PENDENTE', 'Aguardando Pedido'),
+        ('PEDIDO', 'Pedido feito'),
+        ('CHEGOU', 'Produto chegou'),
+        ('ENVIADO', 'Enviado'),
+        ('ENTREGUE', 'Entregue ao cliente'),
+        ('CANCELADO', 'Cancelado')
+    ]
     cliente = models.ForeignKey(Cliente,on_delete=models.CASCADE, related_name='pedidos')
     data_pedido = models.DateField(auto_now_add=True)
     valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     forma_pagamento = models.CharField(max_length=15, choices=FORMA_PAGAMENTO, null=True, blank=True)
     data_limite_pagamento = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[('ABERTO','Aberto'),('FECHADO','Fechado')], default='ABERTO')
+    status_encomenda = models.CharField(max_length=15, choices=STATUS_ENCOMENDA, default='PENDENTE')
     pontos_creditados = models.BooleanField(default=False)
     cupom_usado = models.BooleanField(default=False)
     desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -184,8 +192,8 @@ class Pedido(models.Model):
 
     @property
     def valor_restante(self):
-        #if self.valor_pago > self.valor_total:
-        #    raise ValidationError('O valor informado é maior do que o valor restante de pagamento')
+        if self.valor_pago > self.valor_total:
+            raise ValidationError('O valor informado é maior do que o valor restante de pagamento')
 
         return self.valor_total - self.valor_pago
 
@@ -230,20 +238,32 @@ class Pedido(models.Model):
     def __str__(self):
         return f'Pedido:{self.cliente}'
 
+    @property
+    def proximo_status_permitido(self):
+        fluxo={
+            'PENDENTE': ['PEDIDO'],
+            'PEDIDO': ['CHEGOU'],
+            'CHEGOU': ['ENVIADO'],
+            'ENVIADO': ['ENTREGUE'],
+            'ENTREGUE': [],
+        }
+        return fluxo.get(self.status_encomenda,[])
+    def pode_mudar_para(self,novo_status):
+        #regra de fluxo
+        if novo_status not in self.proximo_status_permitido:
+            return False
+        #regra de pagamento
+        if novo_status in ['ENVIADO','ENTREGUE']:
+            if self.status_pagamento != 'PAGO':
+                return False
+        return True
+
 #===================== ITEM PEDIDO =========================
 
 class ItemPedido(models.Model):
     TIPO_VENDA=[
         ('ESTOQUE','Estoque'),
         ('ENCOMENDA','Encomenda') ,
-    ]
-    STATUS_ITEM = [
-        ('PENDENTE', 'Aguardando Pedido'),
-        ('PEDIDO', 'Pedido feito'),
-        ('CHEGOU', 'Produto chegou'),
-        ('ENVIADO', 'Enviado'),
-        ('ENTREGUE', 'Entregue ao cliente'),
-        ('CANCELADO', 'Cancelado')
     ]
 
     pedido = models.ForeignKey(Pedido,on_delete=models.CASCADE,related_name='itens')
@@ -252,7 +272,7 @@ class ItemPedido(models.Model):
     tipo = models.CharField(max_length=15,choices=TIPO_VENDA)
     quantidade = models.IntegerField(default=0)
     valor_unitario = models.DecimalField(max_digits=10, decimal_places=2,default=0)
-    status_item = models.CharField(max_length=15,choices=STATUS_ITEM,default='PENDENTE')
+
 
 
     def valor_total_item(self):
@@ -298,20 +318,6 @@ class ItemPedido(models.Model):
         #BAIXAR ESTOQUE (apenas na criação)
         if is_new and self.tipo == 'ESTOQUE' and self.produto and self.quantidade:
            baixar_estoque(self.produto,self.quantidade)
-
-        # RETORNO AO ESTOQUE (cancelamento)
-        if (
-                item_antigo and
-                item_antigo.status_item != 'CANCELADO' and
-                self.status_item == 'CANCELADO' and
-                self.tipo == 'ESTOQUE' and
-                self.produto and
-                self.quantidade
-        ):
-            LoteProduto.objects.create(
-                produto=self.produto,
-                quantidade=self.quantidade,
-            )
 
     def __str__(self):
         if self.produto:

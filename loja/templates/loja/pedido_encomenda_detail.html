@@ -1,0 +1,93 @@
+{% extends "loja/base.html" %}
+{% load humanize %}
+
+{% block title %}Encomenda{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+
+    <h2>Encomenda de {{ pedido.cliente.nome }}</h2>
+
+    <p><strong>Data:</strong> {{ pedido.data_pedido }}</p>
+    <p><strong>Status Pagamento:</strong>
+        {% if pedido.status_pagamento == "PAGO" %}
+            🟢 Pago
+        {% elif pedido.status_pagamento == "PARCIAL" %}
+            🟡 Parcial
+        {% else %}
+            🔴 Pendente
+        {% endif %}
+    </p>
+
+    <hr>
+      <table style="width:100%; border-collapse: collapse;">
+          <thead style="background:#4CAF50; color:white;">
+              <tr>
+                  <th style="padding:10px;">Produto</th>
+                  <th style="padding:10px;">Quantidade</th>
+                  <th style="padding:10px;">Status Atual</th>
+                  <th style="padding:10px;">Alterar Status</th>
+              </tr>
+          </thead>
+
+          <tbody>
+              {% for item in itens %}
+              <tr style="border-bottom:1px solid #ddd;">
+
+                  <!-- PRODUTO -->
+                  <td style="padding:10px;">
+                      {{ item.produto.nome_produto|default:item.nome_produto }}
+                  </td>
+
+                  <!-- QUANTIDADE -->
+                  <td style="text-align:center;">
+                      {{ item.quantidade }}
+                  </td>
+              {% endfor %}
+                  <!-- STATUS ATUAL -->
+                  <td style="text-align:center;">
+                      {% if pedido.status_encomenda == "PENDENTE" %}
+                          🔴 Aguardando Pedido
+                      {% elif pedido.status_encomenda == "PEDIDO" %}
+                          🟡 Pedido feito
+                      {% elif pedido.status_encomenda == "CHEGOU" %}
+                          🔵 Produto chegou
+                      {% elif pedido.status_encomenda == "ENVIADO" %}
+                          🟣 Enviado
+                      {% elif pedido.status_encomenda == "ENTREGUE" %}
+                          🟢 Entregue
+                      {% else %}
+                          ⚪ {{ pedido.get_status_encomenda_display }}
+                      {% endif %}
+                  </td>
+
+                  <!-- ALTERAR STATUS -->
+                  <td style="text-align:center;">
+
+                          <form method="POST">
+                            {% csrf_token %}
+                              <select name="status_encomenda">
+                              <option selected disabled>{{pedido.get_status_encomenda_display}}</option>
+
+                                {% for status in pedido.proximo_status_permitido %}
+                                <option value="{{ status }}">{{ status }}</option>
+                                  {% endfor %}
+                            </select>
+                              <button type="submit">Atualizar</button>
+                          </form>
+                  </td>
+              </tr>
+              <tr>
+                  <td colspan="4" style="text-align:center; padding:20px;">
+                      Nenhuma encomenda encontrada
+                  </td>
+              </tr>
+
+          </tbody>
+      </table>
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="{% url 'produto_encomenda_list' %}" class = "menu-btn">🔙 Voltar</a>
+
+    </div>
+</div>
+{% endblock %}
