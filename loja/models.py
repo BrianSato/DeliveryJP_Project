@@ -180,6 +180,14 @@ class Pedido(models.Model):
     forma_pagamento = models.CharField(max_length=15, choices=FORMA_PAGAMENTO, null=True, blank=True)
     data_limite_pagamento = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[('ABERTO','Aberto'),('FECHADO','Fechado')], default='ABERTO')
+    status_pag = models.CharField(
+        max_length=20,
+        choices=[('ATIVO','Ativo'),
+                 ('EXPIRADO','Expirado'),
+                 ('CANCELADO','Cancelado')
+                 ],
+        default='ATIVO'
+    )
     status_encomenda = models.CharField(max_length=15, choices=STATUS_ENCOMENDA, default='PENDENTE')
     pontos_creditados = models.BooleanField(default=False)
     cupom_usado = models.BooleanField(default=False)
@@ -322,12 +330,16 @@ class ItemPedido(models.Model):
         super().save(*args,**kwargs)
         #BAIXAR ESTOQUE (apenas na criação)
         if is_new and self.tipo == 'ESTOQUE' and self.produto and self.quantidade:
-           baixar_estoque(self.produto,self.quantidade)
+           baixar_estoque(self.produto,self.quantidade,self)
 
     def __str__(self):
         if self.produto:
             return f'{self.produto.nome_produto} - {self.quantidade}'
         return f'{self.nome_produto} ({self.quantidade}x)'
 
+#===================== ITEM PEDIDO LOTE  =========================
 
-
+class ItemPedidoLote(models.Model):
+    item_pedido = models.ForeignKey('ItemPedido', on_delete=models.CASCADE, related_name='lotes')
+    lote = models.ForeignKey('LoteProduto', on_delete=models.CASCADE)
+    quantidade = models.PositiveIntegerField()

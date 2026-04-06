@@ -71,18 +71,16 @@
 
                                 {% for status in pedido.proximo_status_permitido %}
                                 <option value="{{ status }}">{{ status }}</option>
+                                  {%empty %}
+                                      <td colspan="4" style="text-align:center; padding:20px;">
+                                          Nenhuma encomenda encontrada
+                                      </td>
                                   {% endfor %}
                             </select>
                               <button type="submit">Atualizar</button>
                           </form>
                   </td>
               </tr>
-              <tr>
-                  <td colspan="4" style="text-align:center; padding:20px;">
-                      Nenhuma encomenda encontrada
-                  </td>
-              </tr>
-
           </tbody>
       </table>
     <div style="margin-top: 20px; text-align: center;">
