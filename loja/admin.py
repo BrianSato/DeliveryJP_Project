@@ -93,6 +93,7 @@ class PedidoAdmin(admin.ModelAdmin):
         'valor_pago_formatado',
         'data_pedido_formatada',
         'data_limite_formatada',
+        'status_pag',
         'status_encomenda_colorido',
     )
     inlines = [ItemPedidoInline]

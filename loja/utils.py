@@ -81,7 +81,19 @@ def processar_expiracao_pedido(pedido):
 
 def processar_pedidos_expirados():
     from loja.models import Pedido
-    pedidos = Pedido.objects.filter(status='ATIVO')
+    from django.utils import timezone
+
+    hoje = timezone.now().date()
+
+    pedidos = Pedido.objects.filter(status_pag='ATIVO')
 
     for pedido in pedidos:
-        processar_expiracao_pedido(pedido)
+        if not pedido.data_limite_pagamento:
+            continue
+
+        if pedido.data_limite_pagamento < hoje and pedido.status_pagamento != 'PAGO':
+            for item in pedido.itens.all():
+                devolver_estoque(item)
+
+            pedido.status_pag = 'EXPIRADO'
+            pedido.save()
