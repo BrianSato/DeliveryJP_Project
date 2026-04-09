@@ -15,19 +15,49 @@
                    value="{{ query|default:'' }}"
                    style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
         </form>
-        {% for pedido in pedidos %}
-            <div class="menu-btn">
-                <strong>{{ pedido.cliente }}</strong><br>
-                Data: {{ pedido.data_pedido }}<br>
-                Total Pedido: ¥{{ pedido.valor_total |floatformat:0|intcomma }}<br>
+        <table style="width:100%;border-collapse: collapse; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <thead style="background-color: #4CAF50; color:white">
+                <tr>
+                    <th>Nome Cliente</th>
+                    <th>Data Pedido</th>
+                    <th>Total Pedido</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pedido in pedidos %}
+                <tr style="border-bottom: 1px solid #ddd;">
+                        <td style="padding: 10px;">
+                        <a href="{%  url 'pedido_detail' pedido.id %}">
+                            {{ pedido.cliente }}
+                        </a>
+                    </td>
+                    <td style="padding: 10px; text-align: right;">
+                        {{ pedido.data_pedido }}
+                    </td>
+                    <td style="padding: 10px; text-align: right;">
+                        ¥{{ pedido.valor_total |floatformat:0|intcomma }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px;">
+                        Nenhum pedido cadastrado
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="margin-top: 15px; text-align:center;">
+            {% if pedidos.has_previous %}
+                <a href="?page={{ pedidos.previous_page_number }}">Anterior</a>
+            {% endif %}
 
-                <a href="{% url 'pedido_detail' pedido.id %}" style="color:white ;text-decoration:none" >
-                    Ver detalhes
-                </a>
-            </div>
-            {% empty %}
-            <p>Nenhum pedido encontrado</p>
-        {% endfor %}
+            <span> Página {{ pedidos.number }} de {{ pedidos.paginator.num_pages }} </span>
+
+            {% if pedidos.has_next %}
+                <a href="?page={{ pedidos.next_page_number }}">Próxima</a>
+            {% endif %}
+        </div>
         <div style="margin-top: 20px; text-align: center;">
             <a href="{% url 'home' %}" class="menu-btn">Voltar</a>
         </div>

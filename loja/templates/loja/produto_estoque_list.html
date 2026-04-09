@@ -8,7 +8,7 @@
         <h2 style="text-align: center; margin-bottom: 20px;">Produtos no Estoque</h2>
         <!--- BUSCA --->
         <form method="get" style="width:100%; max-width:540px;">
-            <input type="text" name="q" placeholder="Buscar por nome ou telefone"
+            <input type="text" name="q" placeholder="Buscar do produto"
                    value="{{ query|default:'' }}"
                    style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
         </form>
@@ -46,6 +46,17 @@
                 {% endfor %}
             </tbody>
         </table>
+        <div style="margin-top: 15px; text-align:center;">
+            {% if produtos.has_previous %}
+                <a href="?page={{ produtos.previous_page_number }}">Anterior</a>
+            {% endif %}
+
+            <span> Página {{ produtos.number }} de {{ produtos.paginator.num_pages }} </span>
+
+            {% if produtos.has_next %}
+                <a href="?page={{ produtos.next_page_number }}">Próxima</a>
+            {% endif %}
+        </div>
         <div style="margin-top: 20px; text-align: center;">
             <a href="{% url 'produto_create' %}" class="menu-btn">➕ Novo Produto</a>
             <a href="{% url 'home' %}" class="menu-btn">🔙 Voltar</a>

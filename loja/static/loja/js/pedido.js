@@ -5,17 +5,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const campoNome = document.getElementById('campo-nome-produto');
     const campoValor = document.getElementById('campo-valor');
 
-    if (!tipoSelect) return; // evita erro se não estiver na página
+    const inputValor = document.querySelector('[name="valor_unitario"]');
+    const inputNome = document.querySelector('[name="nome_produto"]');
+
+    if (!tipoSelect) return;
 
     function atualizarCampos() {
         if (tipoSelect.value === 'ESTOQUE') {
             campoProduto.style.display = 'block';
             campoNome.style.display = 'none';
             campoValor.style.display = 'none';
-        } else {
+
+            // REMOVE obrigatoriedade
+            if (inputValor) inputValor.required = false;
+            if (inputNome) inputNome.required = false;
+
+        } else { // ENCOMENDA
             campoProduto.style.display = 'none';
             campoNome.style.display = 'block';
             campoValor.style.display = 'block';
+
+            // TORNA obrigatório
+            if (inputValor) inputValor.required = true;
+            if (inputNome) inputNome.required = true;
         }
     }
 

@@ -1,4 +1,7 @@
+import logging
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 def formatar_iene(valor):
     if valor is None:
@@ -66,11 +69,15 @@ def processar_expiracao_pedido(pedido):
     if pedido.status_pagamento == 'PAGO':
         return  # não expira pedido pago
 
+    logger.info(f"Expiring order {pedido.id}")
+
     for item in pedido.itens.all():
         devolver_estoque(item)
 
     pedido.status = 'EXPIRADO'
     pedido.save()
+
+    logger.info(f"Order {pedido.id} expired successfully")
 
 def processar_pedidos_expirados():
     from loja.models import Pedido

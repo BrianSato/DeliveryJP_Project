@@ -59,6 +59,17 @@
                 {% endfor %}
             </tbody>
         </table>
+        <div style="margin-top: 15px; text-align:center;">
+            {% if itens.has_previous %}
+                <a href="?page={{ itens.previous_page_number }}">Anterior</a>
+            {% endif %}
+
+            <span> Página {{ itens.number }} de {{ itens.paginator.num_pages }} </span>
+
+            {% if itens.has_next %}
+                <a href="?page={{ itens.next_page_number }}">Próxima</a>
+            {% endif %}
+        </div>
         <div style="margin-top: 20px; text-align: center;">
             <a href="{% url 'home' %}" class="menu-btn">🔙 Voltar</a>
         </div>

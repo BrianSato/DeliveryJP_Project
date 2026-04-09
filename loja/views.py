@@ -2,6 +2,7 @@ import re
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.utils import timezone
 from django.db.models import Q, Sum
@@ -92,8 +93,11 @@ def cliente_create(request):
 #Tela de Lista de Clientes
 @login_required
 def cliente_list(request):
+    clientes_list = Cliente.objects.all().order_by('-id')
+    paginator = Paginator(clientes_list, 10)
+    page_number = request.GET.get('page')
+    clientes = paginator.get_page(page_number)
     query = request.GET.get('q')
-    clientes = Cliente.objects.all()
     if query:
         clientes = clientes.filter(
             Q(nome__icontains=query) |
@@ -136,7 +140,10 @@ def produto_create(request):
 #Tela da Lista de Produtos no Estoque
 @login_required
 def produto_estoque_list(request):
-    produtos = Produto.objects.all()
+    produtos_list = Produto.objects.all().order_by('-id')
+    paginator = Paginator(produtos_list, 10)
+    page_numer = request.GET.get('page')
+    produtos = paginator.get_page(page_numer)
     query = request.GET.get('q')
     if query:
         produtos = produtos.filter(
@@ -149,7 +156,10 @@ def produto_estoque_list(request):
 #Tela da Lista de Produtos Encomendados
 @login_required
 def produto_encomenda_list(request):
-    itens = ItemPedido.objects.filter(tipo='ENCOMENDA')
+    itens_list = ItemPedido.objects.filter(tipo='ENCOMENDA').order_by('-id')
+    paginator = Paginator(itens_list, 10)
+    page_numer = request.GET.get('page')
+    itens = paginator.get_page(page_numer)
 
     return render(request,'loja/produto_encomenda_list.html',{
         'itens': itens
@@ -217,7 +227,10 @@ def pedido_create(request):
 #Tela de Lista de Pedidos
 @login_required
 def pedido_list(request):
-    pedidos = Pedido.objects.all()
+    pedidos_lista = Pedido.objects.all().order_by('-id')
+    paginator = Paginator(pedidos_lista, 10)
+    page_number = request.GET.get('page')
+    pedidos = paginator.get_page(page_number)
     query = request.GET.get('q')
     if query:
         pedidos = pedidos.filter(
@@ -306,48 +319,6 @@ def pedido_detail(request,pedido_id):
                 pedido.status = 'FECHADO'
                 pedido.save()
             return redirect('pedido_detail', pedido_id=pedido.id)
-
-    if request.method == 'POST':
-        valor_pago = request.POST.get('valor_pago')
-        forma_pagamento = request.POST.get('forma_pagamento')
-        # ATUALIZAR PAGAMENTO
-        if valor_pago:
-            pedido.valor_pago += Decimal(valor_pago)
-        # FORMA DE PAGAMENTO
-        if forma_pagamento:
-            pedido.forma_pagamento = forma_pagamento
-        pedido.save()
-
-        #CRIA NOVO ITEM
-        quantidade = int(request.POST.get('quantidade')or 0)
-        tipo= request.POST.get('tipo')
-
-        if tipo == 'ESTOQUE':
-            produto_id = request.POST.get('produto')
-            if produto_id:
-                produto = Produto.objects.get(id=produto_id)
-
-                ItemPedido.objects.create(
-                    pedido=pedido,
-                    produto=produto,
-                    quantidade=quantidade,
-                    valor_unitario=produto.preco_unitario,
-                    tipo=tipo
-               )
-        elif tipo == 'ENCOMENDA': #ENCOMENDA
-            nome_produto= request.POST.get('nome_produto')
-            valor_unitario= request.POST.get('valor_unitario')
-            if nome_produto and valor_unitario:
-
-                ItemPedido.objects.create(
-                    pedido=pedido,
-                    nome_produto=nome_produto,
-                    quantidade=quantidade,
-                    valor_unitario=valor_unitario,
-                    tipo=tipo
-                )
-
-        return redirect('pedido_detail',pedido_id= pedido.id)
 
     produtos= Produto.objects.all()
     return render(request,'loja/pedido_detail.html',{

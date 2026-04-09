@@ -44,6 +44,7 @@ class ItemPedidoInline(admin.TabularInline):
     fields = (
         'produto',
         'nome_produto',
+        'valor_unitario',
         'tipo',
         'quantidade',
     )
@@ -52,7 +53,6 @@ class ItemPedidoInline(admin.TabularInline):
         'valor_unitario_formatado',
         'valor_pago_formatado',
         'status_pagamento_colorido',
-        'data_limite_formatada',
         )
 
     can_delete = True
@@ -73,12 +73,6 @@ class ItemPedidoInline(admin.TabularInline):
 
     status_pagamento_colorido.short_description = 'Status Pagamento'
 
-    def data_limite_formatada(self,obj):
-        if obj.data_limite_pagamento:
-            return obj.data_limite_pagamento.strftime('%d/%m/%Y')
-        return '-'
-    data_limite_formatada.short_description = 'Data de Limite de Pagamento'
-
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'produto':
             kwargs['queryset'] = Produto.objects.filter(
@@ -98,6 +92,7 @@ class PedidoAdmin(admin.ModelAdmin):
         'valor_total_formatado',
         'valor_pago_formatado',
         'data_pedido_formatada',
+        'data_limite_formatada',
         'status_encomenda_colorido',
     )
     inlines = [ItemPedidoInline]
@@ -108,6 +103,7 @@ class PedidoAdmin(admin.ModelAdmin):
         return (
             'cliente',
             'data_pedido',
+            'data_limite_pagamento',
         )
 
     def data_pedido_formatada(self,obj):
@@ -115,6 +111,13 @@ class PedidoAdmin(admin.ModelAdmin):
             return obj.data_pedido.strftime('%d/%m/%Y')
         return '-'
     data_pedido_formatada.short_description = 'Data do Pedido'
+
+    def data_limite_formatada(self,obj):
+        if obj.data_limite_pagamento:
+            return obj.data_limite_pagamento.strftime('%d/%m/%Y')
+        return '-'
+    data_limite_formatada.short_description = 'Data de Limite de Pagamento'
+
     def status_encomenda_colorido(self, obj):
         if obj.status_encomenda == 'PENDENTE':
             return mark_safe('<span style="color:gray;font-weight:bold;">Aguardando Pedido</span>')
@@ -129,6 +132,7 @@ class PedidoAdmin(admin.ModelAdmin):
 
         return mark_safe('<span style="color:red;font-weight:bold;">Cancelado</span>')
     status_encomenda_colorido.short_description = 'Status Item'
+
     def valor_total_formatado(self,obj):
         return formatar_iene(obj.valor_total)
     valor_total_formatado.short_description = 'Valor Total'

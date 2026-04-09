@@ -79,7 +79,6 @@ class Produto(models.Model):
     def total_encomendados(self):
         return self.itens_pedido.filter(
             tipo='ENCOMENDA',
-            status_encomenda__in=['PEDIDO','ENVIADO','CHEGOU','ENTREGUE']
         ).aggregate(
             total=models.Sum('quantidade')
         )['total'] or 0
@@ -295,18 +294,28 @@ class ItemPedido(models.Model):
         # DEVE TER PRODUTO OU NOME_PRODUTO
         if not self.produto and not self.nome_produto:
             raise ValidationError('Informe um produto ou nome do produto')
-        #NÃO PODE TER OS DOIS AO MESMO TEMPO
-        if self.produto and self.nome_produto:
-            raise ValidationError('Escolha produto OU nome do produto')
-        #QUANTIDADE OBRIGATÓRIA E VÁLIDA
-        if not self.quantidade or self.quantidade <=0:
+
+        # QUANTIDADE OBRIGATÓRIA
+        if not self.quantidade or self.quantidade <= 0:
             raise ValidationError('Quantidade deve ser maior que zero')
-        #TIPO ESTOQUE PRECISA DE PRODUTO
+
+        # ESTOQUE → precisa de produto
         if self.tipo == 'ESTOQUE' and not self.produto:
             raise ValidationError('Selecione um produto para itens de estoque')
-        #TIPO ENCOMENDA PRECISA DE NOME
-        if self.tipo == 'ENCOMENDA' and not self.nome_produto:
-            raise ValidationError('Informe o nome do produto para encomenda')
+
+        # ENCOMENDA → regras novas
+        if self.tipo == 'ENCOMENDA':
+            # Precisa inserir o valor do produto
+            if self.valor_unitario is None or self.valor_unitario <= 0:
+                raise ValidationError('Informe um valor válido')
+
+            # se NÃO tem produto → precisa nome
+            if not self.produto and not self.nome_produto:
+                raise ValidationError('Informe o nome do produto para encomenda')
+
+            # se NÃO tem produto → precisa valor
+            if not self.produto and not self.valor_unitario:
+                raise ValidationError('Informe o valor do produto encomendado')
 
     def save(self,*args,**kwargs):
         item_antigo = None
