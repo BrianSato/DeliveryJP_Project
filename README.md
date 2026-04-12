@@ -146,6 +146,7 @@ http://127.0.0.1:8000/admin/
 Desenvolvido por Brian Sato
 
 GitHub: https://github.com/BrianSato
+
 LinkedIn: https://www.linkedin.com/in/brian-sato-b16563263/
 
 ---
