@@ -58,16 +58,26 @@ A aplicação foi projetada simulando um ambiente real de operação, incluindo 
 
 ---
 
-## 🏗️ Arquitetura
+## 🏗️ Arquitetura e Organização do Projeto
 
-O projeto segue uma separação de responsabilidades baseada em:
+O projeto foi estruturado com foco na separação de responsabilidades, utilizando um app principal chamado `loja`, responsável por centralizar as regras de negócio do sistema.
 
-- Models: definição das entidades e regras de dados
-- Views: controle das requisições e respostas
-- Services: regras de negócio isoladas (quando aplicável)
-- Signals: automações e eventos do sistema
-
-Essa abordagem facilita a manutenção, escalabilidade e organização do código.
+```bash
+loja/
+├── models.py       # definição das entidades e estrutura do banco
+├── views.py        # controle das requisições e respostas
+├── urls.py         # roteamento da aplicação
+├── services.py     # regras de negócio (quando aplicável)
+├── signals.py      # automações e eventos do sistema
+├── utils.py        # funções auxiliares
+├── middleware.py   # interceptação e controle de requisições
+```
+Outras estruturas relevantes:
+```bash
+templates/loja/   # páginas HTML do sistema
+static/loja/      # arquivos estáticos (CSS, JavaScript, imagens)
+```
+Essa organização foi adotada para facilitar manutenção, escalabilidade e clareza na separação de responsabilidades.
 
 ---
 
@@ -116,16 +126,6 @@ python manage.py runserver
 ### Acesse:
 ```bash
 http://127.0.0.1:8000/admin/
-```
----
-
-## 📁 Estrutura do Projeto
-```bash
-core/
-├── models.py
-├── views.py
-├── services.py  # (se aplicável)
-├── signals.py   # (se estiver usando automações)
 ```
 ---
 
