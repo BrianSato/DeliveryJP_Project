@@ -14,12 +14,19 @@ VALOR_CUPOM = 1000
 #===================== CLIENTES =========================
 class Cliente(models.Model):
     nome = models.CharField(max_length=100)
-    telefone = models.CharField(max_length=20, unique=True)
+    telefone = models.CharField(
+        max_length=20,
+        unique=True,
+        error_messages={
+            'unique':'Já existe um cliente com este telefone'
+        }
+    )
     endereco = models.CharField(max_length=200)
     pontos = models.IntegerField(default=0)
     cupons = models.IntegerField(default=0)
     validade_pontos = models.DateField(blank=True,null=True)
     data_cadastro = models.DateField(auto_now_add=True)
+    ativo = models.BooleanField(default=True)
 
     @property
     def telefone_formatado(self):

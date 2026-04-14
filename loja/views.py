@@ -4,7 +4,6 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.http import HttpResponse
 from django.utils import timezone
 from django.db.models import Q, Sum
 from django.shortcuts import render, redirect,get_object_or_404
@@ -12,6 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 
+from loja.forms import ClienteForm
 from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
 from loja.utils import criar_lote
 
@@ -91,22 +91,52 @@ def cliente_create(request):
 
     return render(request,'loja/cliente.html')
 
+def cliente_update(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    if request.method == 'POST':
+        form = ClienteForm(request.POST, instance=cliente)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Cliente atualizado com sucesso!")
+            return redirect('cliente_list')  # ou cliente_detail
+
+    else:
+        form = ClienteForm(instance=cliente)
+
+    return render(request, 'loja/cliente_update.html', {
+        'form': form,
+        'cliente': cliente
+    })
+
 #Tela de Lista de Clientes
 @login_required
 def cliente_list(request):
-    clientes_list = Cliente.objects.all().order_by('-id')
-    paginator = Paginator(clientes_list, 10)
-    page_number = request.GET.get('page')
-    clientes = paginator.get_page(page_number)
     query = request.GET.get('q')
+    mostrar_inativos = request.GET.get('inativos')
+
+    # lógica principal
+    if mostrar_inativos:
+        clientes_list = Cliente.objects.filter(ativo=False).order_by('-id')
+    else:
+        clientes_list = Cliente.objects.filter(ativo=True).order_by('-id')
+
+    # filtro de busca
     if query:
-        clientes = clientes.filter(
+        clientes_list = clientes_list.filter(
             Q(nome__icontains=query) |
             Q(telefone__icontains=query)
         )
-    return render(request,'loja/cliente_list.html',{
-        'clientes':clientes,
-        'query':query
+
+    paginator = Paginator(clientes_list, 10)
+    page_number = request.GET.get('page')
+    clientes = paginator.get_page(page_number)
+
+    return render(request, 'loja/cliente_list.html', {
+        'clientes': clientes,
+        'query': query,
+        'mostrar_inativos': mostrar_inativos
     })
 #Tela da lista de Cliente
 @login_required
@@ -118,6 +148,27 @@ def cliente_detail(request,id):
         'cliente':cliente,
         'pedidos':pedidos,
     })
+# Apagar/Desativar Cliente
+def cliente_delete(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    if request.method == 'POST':
+        cliente.ativo = False
+        cliente.save()
+        messages.success(request, 'Cliente desativado com sucesso.')
+        return redirect('cliente_list')
+
+    return redirect('cliente_detail', cliente_id=cliente.id)
+# Reativar Cliente
+def cliente_reativar(request, cliente_id):
+    cliente = get_object_or_404(Cliente, id=cliente_id)
+
+    if request.method == 'POST':
+        cliente.ativo = True
+        cliente.save()
+        messages.success(request, 'Cliente reativado com sucesso.')
+
+    return redirect('cliente_list')
 #Tela do Menu de Produtos
 @login_required
 def produto_menu(request):
@@ -142,14 +193,15 @@ def produto_create(request):
 @login_required
 def produto_estoque_list(request):
     produtos_list = Produto.objects.all().order_by('-id')
+    query = request.GET.get('q')
+    if query:
+        produtos_list = produtos_list.filter(
+            Q(nome_produto__icontains=query)
+        )
     paginator = Paginator(produtos_list, 10)
     page_numer = request.GET.get('page')
     produtos = paginator.get_page(page_numer)
-    query = request.GET.get('q')
-    if query:
-        produtos = produtos.filter(
-            Q(nome_produto__icontains=query)
-        )
+
     return render(request,'loja/produto_estoque_list.html',{
         'produtos':produtos,
         'query':query,
@@ -229,15 +281,16 @@ def pedido_create(request):
 @login_required
 def pedido_list(request):
     pedidos_lista = Pedido.objects.all().order_by('-id')
+    query = request.GET.get('q')
+    if query:
+        pedidos_lista = pedidos_lista.filter(
+            Q(cliente__nome__icontains=query) |
+            Q(cliente__telefone__icontains=query)
+        )
     paginator = Paginator(pedidos_lista, 10)
     page_number = request.GET.get('page')
     pedidos = paginator.get_page(page_number)
-    query = request.GET.get('q')
-    if query:
-        pedidos = pedidos.filter(
-            Q(cliente__nome__icontains = query) |
-            Q(cliente__telefone__icontains = query)
-        )
+
     return render(request,'loja/pedido_list.html',{
         'pedidos':pedidos,
         'query':query
@@ -338,9 +391,12 @@ def pedido_detail(request,pedido_id):
             if pedido.status != 'FECHADO':
                 try:
                     pedido.status = 'FECHADO'
+                    print("ITENS:", pedido.itens.count())
+                    print("FORMA PAGAMENTO:", pedido.forma_pagamento)
                     pedido.save()  # AQUI CHAMA O CLEAN() DO MODEL
 
                 except ValidationError as e:
+                    print('ERRO AO FINALIZAR:',e.messages)
                     messages.error(request, ', '.join(e.messages))
                     return redirect('pedido_detail', pedido_id=pedido.id)
 

@@ -19,6 +19,9 @@
             <p><strong>🎁 Cupons:</strong>{{ cliente.cupons }}</p>
 
         </div>
+        <a href="{% url 'cliente_update' cliente.id %}" class="menu-btn">
+            ✏️ Editar
+        </a>
         <!--- FINANCEIRO --->
         <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
             <p><strong>💲 Saldo Devedor:</strong> ¥{{ cliente.saldo_devedor_total |floatformat:0|intcomma }}</p>
@@ -35,6 +38,15 @@
                 {% endif %}
             </td>
         </div>
+        <!--- APAGAR/DESATIVAR CLIENTE --->
+        <form method="POST" action="{% url 'cliente_delete' cliente.id %}">
+            {% csrf_token %}
+            <button type="submit"
+                    class="btn btn-danger"
+                    onclick="return confirm('Tem certeza que deseja desativar este cliente?')">
+                🗑️ Desativar Cliente
+            </button>
+        </form>
         <!--- VOLTAR --->
         <button class="menu-btn" onclick="location.href='{% url 'cliente_list' %}'">
             🔙 Voltar
@@ -44,4 +56,4 @@
         </button>
 
     </div>
-{% endblock %}>
+{% endblock %}

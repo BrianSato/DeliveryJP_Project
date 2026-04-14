@@ -26,6 +26,12 @@ urlpatterns = [
     path('cliente/novo/', views.cliente_create, name='cliente_create'),
     #detalhes dos clientes
     path('cliente/<int:id>/', views.cliente_detail, name='cliente_detail'),
+    #editar cliente
+    path('clientes/<int:cliente_id>/editar/', views.cliente_update, name='cliente_update'),
+    #apagar/desativar cliente
+    path('clientes/<int:cliente_id>/delete/', views.cliente_delete, name='cliente_delete'),
+    #reativar cliente
+    path('clientes/<int:cliente_id>/reativar/', views.cliente_reativar, name='cliente_reativar'),
     # menu de produtos
     path('produto/', views.produto_menu, name='produto_menu'),
     # produto novo

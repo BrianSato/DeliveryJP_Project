@@ -6,6 +6,12 @@
     <div style="width: 100%; max-width: 600px; margin: 0 auto;">
         <div style="margin-bottom: 20px; text-align: center;">
             <a href="{% url 'cliente_create' %}" class="menu-btn">➕ Novo Cliente</a>
+            <a href="{% url 'cliente_list' %}?inativos=1" class="btn btn-secondary">
+                Mostrar Inativos
+            </a>
+            <a href="{% url 'cliente_list' %}" class="btn btn-success">
+                Mostrar Ativos
+            </a>
         </div>
         <!--- BUSCA --->
         <div style="width:100%; max-width:540px;">
@@ -27,26 +33,50 @@
             <tbody>
                 {% for cliente in clientes %}
                 <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 10px;">
-                        <a href="{%  url 'cliente_detail' cliente.id %}">
+
+                    <td style="padding: 10px;">
+                        <a href="{% url 'cliente_detail' cliente.id %}">
                             {{ cliente.nome }}
                         </a>
                     </td>
+
                     <td style="padding: 10px; text-align: right;">
                         {{ cliente.telefone_formatado }}
                     </td>
+
                     <td style="padding: 10px; text-align: right;">
                         {% if cliente.tem_atraso %}
                             ⚠️ Atrasado
                         {% else %}
-                            ✅️ Em dia
+                            ✅ Em dia
                         {% endif %}
                     </td>
+
+                    <!-- NOVA COLUNA DE AÇÕES -->
+                    <td style="padding: 10px; text-align: right;">
+
+                        <!-- reativar só quando estiver vendo inativos -->
+                        {% if mostrar_inativos %}
+                            <form method="POST"
+                                  action="{% url 'cliente_reativar' cliente.id %}"
+                                  style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        style="background-color: green; color: white; border: none; padding: 5px 8px; border-radius: 4px;">
+                                    Reativar
+                                </button>
+                            </form>
+                        {% endif %}
+
+                    </td>
+
                 </tr>
+
                 {% empty %}
                 <tr>
                     <td colspan="4" style="text-align: center; padding: 20px;">
                         Nenhum cliente encontrado
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -63,7 +93,9 @@
             {% endif %}
         </div>
         <div style="margin-top: 20px; text-align: center;">
-            <a href="{% url 'home' %}" class="menu-btn">Voltar</a>
+            <a href="{% url 'home' %}" class="menu-btn">
+                🔙 Voltar
+            </a>
         </div>
     </div>
 {% endblock %}
