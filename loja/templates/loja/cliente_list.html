@@ -3,99 +3,116 @@
 {% block title %}Clientes{% endblock %}
 
 {% block content %}
-    <div style="width: 100%; max-width: 600px; margin: 0 auto;">
-        <div style="margin-bottom: 20px; text-align: center;">
-            <a href="{% url 'cliente_create' %}" class="menu-btn">➕ Novo Cliente</a>
-            <a href="{% url 'cliente_list' %}?inativos=1" class="btn btn-secondary">
-                Mostrar Inativos
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h3 class="mb-0">Clientes</h3>
+
+        <div class="d-flex gap-2">
+
+            <a href="{% url 'cliente_create' %}" class="btn btn-primary btn-sm">
+                + Novo Cliente
             </a>
-            <a href="{% url 'cliente_list' %}" class="btn btn-success">
-                Mostrar Ativos
+
+            <a href="{% url 'cliente_list' %}" class="btn btn-success btn-sm">
+                Ativos
             </a>
-        </div>
-        <!--- BUSCA --->
-        <div style="width:100%; max-width:540px;">
-            <form method="get" style="width:100%; max-width:375px;">
-            <input type="text" name="q" placeholder="Buscar por nome ou telefone"
-                   value="{{ query|default:'' }}"
-                   style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:1px solid #ccc;">
-            </form>
-        </div>
-        <!---LISTA--->
-        <table style="width:100%;border-collapse: collapse; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
-            <thead style="background-color: #4CAF50; color:white">
-                <tr>
-                    <th>Nome</th>
-                    <th>Telefone</th>
-                    <th>Status Pagamento</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cliente in clientes %}
-                <tr style="border-bottom: 1px solid #ddd;">
 
-                    <td style="padding: 10px;">
-                        <a href="{% url 'cliente_detail' cliente.id %}">
-                            {{ cliente.nome }}
-                        </a>
-                    </td>
-
-                    <td style="padding: 10px; text-align: right;">
-                        {{ cliente.telefone_formatado }}
-                    </td>
-
-                    <td style="padding: 10px; text-align: right;">
-                        {% if cliente.tem_atraso %}
-                            ⚠️ Atrasado
-                        {% else %}
-                            ✅ Em dia
-                        {% endif %}
-                    </td>
-
-                    <!-- NOVA COLUNA DE AÇÕES -->
-                    <td style="padding: 10px; text-align: right;">
-
-                        <!-- reativar só quando estiver vendo inativos -->
-                        {% if mostrar_inativos %}
-                            <form method="POST"
-                                  action="{% url 'cliente_reativar' cliente.id %}"
-                                  style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        style="background-color: green; color: white; border: none; padding: 5px 8px; border-radius: 4px;">
-                                    Reativar
-                                </button>
-                            </form>
-                        {% endif %}
-
-                    </td>
-
-                </tr>
-
-                {% empty %}
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 20px;">
-                        Nenhum cliente encontrado
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <div style="margin-top: 15px; text-align:center;">
-            {% if clientes.has_previous %}
-                <a href="?page={{ clientes.previous_page_number }}">Anterior</a>
-            {% endif %}
-
-            <span> Página {{ clientes.number }} de {{ clientes.paginator.num_pages }} </span>
-
-            {% if clientes.has_next %}
-                <a href="?page={{ clientes.next_page_number }}">Próxima</a>
-            {% endif %}
-        </div>
-        <div style="margin-top: 20px; text-align: center;">
-            <a href="{% url 'home' %}" class="menu-btn">
-                🔙 Voltar
+            <a href="{% url 'cliente_list' %}?inativos=1" class="btn btn-secondary btn-sm">
+                Inativos
             </a>
+
         </div>
     </div>
+
+    <!-- 🔍 BUSCA -->
+    <form method="GET" class="mb-3">
+        <input type="text"
+               name="q"
+               value="{{ query }}"
+               class="form-control"
+               placeholder="Buscar por nome ou telefone...">
+    </form>
+
+    <!-- 📊 TABELA -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+
+            <table class="table table-hover table-striped mb-0 align-middle">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nome</th>
+                        <th class="text-end">Telefone</th>
+                        <th class="text-end">Status</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                {% for cliente in clientes %}
+
+                    <tr>
+
+                        <!-- Nome -->
+                        <td>
+                            <a href="{% url 'cliente_detail' cliente.id %}" class="text-decoration-none">
+                                {{ cliente.nome }}
+                            </a>
+                        </td>
+
+                        <!-- Telefone -->
+                        <td class="text-end">
+                            {{ cliente.telefone_formatado }}
+                        </td>
+
+                        <!-- Status -->
+                        <td class="text-end">
+                            {% if cliente.tem_atraso %}
+                                <span class="badge bg-danger">Atrasado</span>
+                            {% else %}
+                                <span class="badge bg-success">Em dia</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Ações -->
+                        <td class="text-end">
+
+                            <a href="{% url 'cliente_update' cliente.id %}"
+                               class="btn btn-warning btn-sm">
+                                Editar
+                            </a>
+
+                            {% if mostrar_inativos %}
+                                <form method="POST"
+                                      action="{% url 'cliente_reativar' cliente.id %}"
+                                      class="d-inline">
+                                    {% csrf_token %}
+                                    <button class="btn btn-success btn-sm"
+                                            onclick="return confirm('Reativar este cliente?')">
+                                        Reativar
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                {% empty %}
+
+                    <tr>
+                        <td colspan="4" class="text-center p-4">
+                            Nenhum cliente encontrado
+                        </td>
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+</div>
 {% endblock %}
