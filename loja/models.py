@@ -183,7 +183,6 @@ class Pedido(models.Model):
         max_length=20,
         choices=[('ATIVO','Ativo'),
                  ('EXPIRADO','Expirado'),
-                 ('CANCELADO','Cancelado')
                  ],
         default='ATIVO'
     )
@@ -210,6 +209,8 @@ class Pedido(models.Model):
             return 'AGUARDANDO'
         elif self.valor_pago < self.valor_total:
             return 'PARCIAL'
+        elif self.status_pag == 'EXPIRADO':
+            return 'CANCELADO, ITEM DEVOLVIDO AO ESTOQUE'
         else:
             return 'PAGO'
 
@@ -232,6 +233,22 @@ class Pedido(models.Model):
 
             self.pontos_creditados = True
             self.save()
+
+    def pode_finalizar(self):
+        return self.itens.exists() and self.forma_pagamento
+
+    def clean(self):
+        if self.status == 'FECHADO':
+
+            if not self.itens.exists():
+                raise ValidationError("Adicione itens ao pedido antes de finalizar.")
+
+            if self.itens.exists() and not self.forma_pagamento:
+                raise ValidationError("Defina a forma de pagamento.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # GARANTE VALIDAÇÃO SEMPRE
+        super().save(*args, **kwargs)
 
     def atualizar_data_limite(self):
         if self.valor_pago == 0:
@@ -285,61 +302,52 @@ class ItemPedido(models.Model):
     quantidade = models.IntegerField(default=0)
     valor_unitario = models.DecimalField(max_digits=10, decimal_places=2,default=0)
 
-
-
     def valor_total_item(self):
         return self.valor_unitario * self.quantidade
 
     def clean(self):
-        # DEVE TER PRODUTO OU NOME_PRODUTO
+        # PRODUTO OU NOME
         if not self.produto and not self.nome_produto:
             raise ValidationError('Informe um produto ou nome do produto')
 
-        # QUANTIDADE OBRIGATÓRIA
+        # QUANTIDADE
         if not self.quantidade or self.quantidade <= 0:
             raise ValidationError('Quantidade deve ser maior que zero')
 
-        # ESTOQUE → precisa de produto
-        if self.tipo == 'ESTOQUE' and not self.produto:
-            raise ValidationError('Selecione um produto para itens de estoque')
+        # ESTOQUE
+        if self.tipo == 'ESTOQUE':
+            if not self.produto:
+                raise ValidationError('Selecione um produto para itens de estoque')
 
-        # ENCOMENDA → regras novas
-        if self.tipo == 'ENCOMENDA':
-            # Precisa inserir o valor do produto
-            if self.valor_unitario is None or self.valor_unitario <= 0:
-                raise ValidationError('Informe um valor válido')
+            # valida estoque aqui (melhor que no save)
+            if self.quantidade and self.produto:
+                if self.quantidade > self.produto.estoque_disponivel:
+                    raise ValidationError({'quantidade': 'Estoque insuficiente'})
 
-            # se NÃO tem produto → precisa nome
-            if not self.produto and not self.nome_produto:
+        # ENCOMENDA
+        elif self.tipo == 'ENCOMENDA':
+            if not self.nome_produto:
                 raise ValidationError('Informe o nome do produto para encomenda')
 
-            # se NÃO tem produto → precisa valor
-            if not self.produto and not self.valor_unitario:
-                raise ValidationError('Informe o valor do produto encomendado')
+            if not self.valor_unitario or self.valor_unitario <= 0:
+                raise ValidationError('Informe um valor válido para o produto')
 
-    def save(self,*args,**kwargs):
-        item_antigo = None
+    def save(self, *args, **kwargs):
         is_new = self.pk is None
 
-        if not is_new:
-            try:
-                item_antigo = ItemPedido.objects.get(pk=self.pk)
-            except ItemPedido.DoesNotExist:
-                pass
-        #VALIDA ESTOQUE ANTES
-        if is_new and self.tipo == 'ESTOQUE' and self.produto and self.quantidade:
-            if self.quantidade > self.produto.estoque_disponivel:
-                raise ValidationError({'quantidade':'Estoque insuficiente'})
-        #GARANTE VALOR UNITÁRIO
+        # GARANTE VALOR UNITÁRIO (antes da validação)
         if self.produto and (not self.valor_unitario or self.valor_unitario == 0):
             self.valor_unitario = self.produto.preco_unitario
-        #VALIDA MODEL
+
+        # VALIDAÇÃO CENTRAL
         self.full_clean()
-        #SALVA PRIMEIRO
-        super().save(*args,**kwargs)
-        #BAIXAR ESTOQUE (apenas na criação)
-        if is_new and self.tipo == 'ESTOQUE' and self.produto and self.quantidade:
-           baixar_estoque(self.produto,self.quantidade,self)
+
+        # SALVA
+        super().save(*args, **kwargs)
+
+        # BAIXA ESTOQUE (somente na criação)
+        if is_new and self.tipo == 'ESTOQUE' and self.produto:
+            baixar_estoque(self.produto, self.quantidade, self)
 
     def __str__(self):
         if self.produto:

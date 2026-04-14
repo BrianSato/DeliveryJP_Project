@@ -12,7 +12,8 @@
         <p><strong>Valor Pago:</strong> ¥ {{ pedido.valor_pago |floatformat:0|intcomma}}</p>
         <p><strong>Forma de Pagamento:</strong> {{ pedido.get_forma_pagamento_display}}</p>
         <p><strong>Saldo Devedor:</strong> ¥ {{ pedido.valor_restante |floatformat:0|intcomma }}</p>
-        <p><strong>Status Pagamento: {{ pedido.status_pagamento |title}} </strong></p>
+        <p><strong>Status Pagamento:</strong> {{ pedido.status_pagamento |title}} </p>
+        <p><strong>Prazo Pagamento:</strong> {{ pedido.status_pag |title}} </p>
         <hr>
         <h3>Itens</h3>
         {% for item in pedido.itens.all %}
@@ -64,7 +65,7 @@
                 <option value="CARTAO">Cartão</option>
                 <option value="TRANSFERENCIA">Transferência</option>
             </select>
-            <button type="submit" class="menu-btn">
+            <button type="submit" name="action" value="forma_pagamento" class="menu-btn">
                 Definir Forma de Pagamento
             </button>
         </form>

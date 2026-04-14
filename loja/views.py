@@ -2,6 +2,7 @@ import re
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.utils import timezone
@@ -262,25 +263,40 @@ def pedido_detail(request,pedido_id):
                 produto_id = request.POST.get('produto')
                 if produto_id:
                     produto = Produto.objects.get(id=produto_id)
+                    try:
 
-                    ItemPedido.objects.create(
-                        pedido=pedido,
-                        produto=produto,
-                        quantidade=quantidade,
-                        valor_unitario=produto.preco_unitario,
-                        tipo=tipo
-                    )
+                        item = ItemPedido(
+                            pedido=pedido,
+                            produto=produto,
+                            quantidade=quantidade,
+                            valor_unitario=produto.preco_unitario,
+                            tipo=tipo
+                        )
+                        item.full_clean()
+                        item.save()
+                    except ValidationError as e:
+                        messages.error(request, "Erro ao adicionar item: " + ', '.join(e.messages))
+                        return redirect('pedido_detail', pedido_id=pedido.id)
+
             elif tipo == 'ENCOMENDA':  # ENCOMENDA
                 nome_produto = request.POST.get('nome_produto')
                 valor_unitario = request.POST.get('valor_unitario')
-                if nome_produto and valor_unitario:
-                    ItemPedido.objects.create(
+
+                try:
+                    item = ItemPedido(
                         pedido=pedido,
                         nome_produto=nome_produto,
                         quantidade=quantidade,
                         valor_unitario=valor_unitario,
                         tipo=tipo
                     )
+
+                    item.full_clean()
+                    item.save()
+
+                except ValidationError as e:
+                    messages.error(request, "Erro ao adicionar item: " + ', '.join(e.messages))
+                    return redirect('pedido_detail', pedido_id=pedido.id)
 
             return redirect('pedido_detail', pedido_id=pedido.id)
         # PAGAMENTOS
@@ -294,11 +310,15 @@ def pedido_detail(request,pedido_id):
                 return redirect('pedido_detail', pedido_id=pedido.id)
         if action == 'forma_pagamento':
             forma_pagamento = request.POST.get('forma_pagamento')
-            # FORMA DE PAGAMENTO
+
             if forma_pagamento:
-                pedido.forma_pagamento = forma_pagamento
-                pedido.save()
-                return redirect('pedido_detail', pedido_id=pedido.id)
+                try:
+                    pedido.forma_pagamento = forma_pagamento
+                    pedido.save()
+                except ValidationError as e:
+                    messages.error(request, "Erro: " + ', '.join(e.messages))
+
+            return redirect('pedido_detail', pedido_id=pedido.id)
         if action == 'usar_cupom':
             if pedido.status == 'FECHADO':
                 messages.error(request,'Pedido já finalizado')
@@ -316,14 +336,21 @@ def pedido_detail(request,pedido_id):
         #FINALIZAR PEDIDO E MUDA STATUS PARA FECHADO
         if action == 'finalizar':
             if pedido.status != 'FECHADO':
-                pedido.status = 'FECHADO'
-                pedido.save()
+                try:
+                    pedido.status = 'FECHADO'
+                    pedido.save()  # AQUI CHAMA O CLEAN() DO MODEL
+
+                except ValidationError as e:
+                    messages.error(request, ', '.join(e.messages))
+                    return redirect('pedido_detail', pedido_id=pedido.id)
+
             return redirect('pedido_detail', pedido_id=pedido.id)
 
-    produtos= Produto.objects.all()
-    return render(request,'loja/pedido_detail.html',{
-        'pedido':pedido,
-        'produtos':produtos
+    produtos = Produto.objects.all()
+
+    return render(request, 'loja/pedido_detail.html', {
+        'pedido': pedido,
+        'produtos': produtos
     })
 @login_required
 def pedido_encomenda_detail(request, pedido_id):
