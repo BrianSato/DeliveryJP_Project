@@ -1,10 +1,49 @@
 {% extends "loja/base.html" %}
+
 {% block title %}Login{% endblock %}
+
 {% block content %}
-    <form method="post" style="width:100%; max-width:300px;">
-        {% csrf_token %}
-        <input type="text" name="username" placeholder="Usuário" style="width: 100%; padding: 10px;margin-bottom: 10px">
-        <input type="password" name="password"  placeholder="Senha" style="width: 100%; padding: 10px;margin-bottom: 15px">
-        <button type="submit" class="menu-btn">Entrar</button>
-    </form>
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+
+    <div class="card shadow-sm p-4" style="width: 100%; max-width: 350px;">
+
+        <h3 class="text-center mb-4">🔐 Login</h3>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- USUÁRIO -->
+            <div class="mb-3">
+                <label class="form-label">Usuário</label>
+                <input type="text"
+                       name="username"
+                       class="form-control"
+                       placeholder="Digite seu usuário"
+                       required>
+            </div>
+
+            <!-- SENHA -->
+            <div class="mb-3">
+                <label class="form-label">Senha</label>
+                <input type="password"
+                       name="password"
+                       class="form-control"
+                       placeholder="Digite sua senha"
+                       required>
+            </div>
+
+            <!-- BOTÃO -->
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">
+                    Entrar
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
 {% endblock %}

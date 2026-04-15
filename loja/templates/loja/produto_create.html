@@ -3,21 +3,56 @@
 {% block title %}Novo Produto{% endblock %}
 
 {% block content %}
-    <div style="width: 100%; max-width: 400px;">
-        <h2>Novo Produto</h2>
-        <form method="POST">
-            {% csrf_token %}
-            <input type="text" name="nome_produto" placeholder="Nome do Produto"
-            style="width: 100%; padding: 10px; margin-bottom: 10px;">
-            <input type="number" step="0.01" name="preco_unitario" placeholder="Preço"
-            style="width: 100%; padding: 10px; margin-bottom: 15px;">
 
-            <button type="submit" class="menu-btn">
-                ➕ Adicionar Novo Produto
-            </button>
-            <button class="menu-btn" onclick="location.href='{% url 'home' %}'">
-                🔙 Voltar menu inicial
-            </button>
-        </form>
+<div class="container mt-4">
+
+    <div class="card shadow-sm mx-auto" style="max-width: 500px;">
+        <div class="card-body">
+
+            <h3 class="text-center mb-4">📦 Novo Produto</h3>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- NOME -->
+                <div class="mb-3">
+                    <label class="form-label">Nome do Produto</label>
+                    <input type="text"
+                           name="nome_produto"
+                           class="form-control"
+                           placeholder="Digite o nome do produto"
+                           required>
+                </div>
+
+                <!-- PREÇO -->
+                <div class="mb-3">
+                    <label class="form-label">Preço Unitário</label>
+                    <input type="number"
+                           step="0.01"
+                           name="preco_unitario"
+                           class="form-control"
+                           placeholder="0.00"
+                           required>
+                </div>
+
+                <!-- BOTÕES -->
+                <div class="d-grid gap-2 mt-4">
+
+                    <button type="submit" class="btn btn-success">
+                        ➕ Adicionar Produto
+                    </button>
+
+                    <a href="{% url 'produto_estoque_list' %}" class="btn btn-outline-secondary">
+                        🔙 Voltar
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
     </div>
-{% endblock %}>
+
+</div>
+
+{% endblock %}

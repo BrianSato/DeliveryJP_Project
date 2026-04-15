@@ -5,38 +5,80 @@
 
 {% block content %}
 
-    <div style="width: 100%;max-width: 400px">
+<div class="container mt-4">
 
-        <!--- NOME --->
-        <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
-            <h2>{{ produto.nome_produto }}</h2>
-        </div>
-        <!--- INFO --->
-        <div style="background: white ; padding: 15px; border-radius: 10px;margin-bottom: 10px;">
-            <p><strong>💰Preço: </strong>¥{{ produto.preco_unitario|floatformat:0|intcomma }}</p>
-            <p><strong>📦Estoque Disponivel: </strong>{{ produto.estoque_disponivel }}</p>
-            <p><strong>⚠️Status Validade: </strong>{{ produto.status_validade_colorido }}</p>
-        </div>
-        <!---LOTES --->
-        {% for lote in lotes %}
-        <div style="background: white ; padding: 10px; margin-bottom: 8px; border-radius: 8px;">
-            <p><strong>📦Quantidade: </strong>{{ lote.quantidade }} unidades</p>
-            <p><strong>📅Validade: </strong>{{ lote.data_validade }}</p>
-            <p><strong>⚠️️Status do Lote: </strong>{{ lote.status_lote_colorido }}</p>
-        </div>
-        {% empty %}
-            <p>Sem lotes cadastrados</p>
-        {% endfor %}
-        <div>
-            <button class="menu_btn" onclick="location.href='{% url 'lote_create' produto.id %}'">
-                ➕ Adicionar Lote
-            </button>
-            <button class="menu-btn" onclick="location.href='{% url 'produto_estoque_list' %}'">
-                🔙 Voltar
-            </button>
-            <button class="menu-btn" onclick="location.href='{% url 'home' %}'">
-                🔙 Voltar menu inicial
-            </button>
+    <!-- NOME DO PRODUTO -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body text-center">
+            <h3>📦 {{ produto.nome_produto }}</h3>
         </div>
     </div>
-{% endblock %}>
+
+    <!-- INFORMAÇÕES -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <p><strong>💰 Preço:</strong>
+                ¥{{ produto.preco_unitario|floatformat:0|intcomma }}
+            </p>
+
+            <p><strong>📦 Estoque Disponível:</strong>
+                {{ produto.estoque_disponivel }}
+            </p>
+
+            <p><strong>⚠️ Status de Validade:</strong>
+                {{ produto.status_validade_colorido }}
+            </p>
+
+        </div>
+    </div>
+
+    <!-- LOTES -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <h5 class="mb-3">📋 Lotes</h5>
+
+            {% for lote in lotes %}
+                <div class="border rounded p-3 mb-2">
+
+                    <p><strong>📦 Quantidade:</strong> {{ lote.quantidade }} unidades</p>
+
+                    <p><strong>📅 Validade:</strong>
+                        {{ lote.data_validade|default:"Sem validade" }}
+                    </p>
+
+                    <p><strong>⚠️ Status:</strong>
+                        {{ lote.status_lote_colorido }}
+                    </p>
+
+                </div>
+            {% empty %}
+                <div class="alert alert-secondary text-center">
+                    Nenhum lote cadastrado
+                </div>
+            {% endfor %}
+
+        </div>
+    </div>
+
+    <!-- AÇÕES -->
+    <div class="d-grid gap-2">
+
+        <a href="{% url 'lote_create' produto.id %}" class="btn btn-success">
+            ➕ Adicionar Lote
+        </a>
+
+        <a href="{% url 'produto_estoque_list' %}" class="btn btn-outline-secondary">
+            🔙 Voltar para Produtos
+        </a>
+
+        <a href="{% url 'home' %}" class="btn btn-outline-dark">
+            🏠 Menu Principal
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

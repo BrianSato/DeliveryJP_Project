@@ -4,96 +4,169 @@
 {% block title %}Detalhes do Pedido{% endblock %}
 
 {% block content %}
-    <div style="width: 100%; max-width: 600px; margin: 0 auto;">
-        <h2 style="text-align: center; margin-bottom: 20px;">Detalhes do Pedido</h2>
-        <p><strong>Cliente:</strong> {{ pedido.cliente }}</p>
-        <p><strong>Data:</strong> {{ pedido.data_pedido }}</p>
-        <p><strong>Valor Total:</strong>  ¥ {{ pedido.valor_total|floatformat:0|intcomma}}</p>
-        <p><strong>Valor Pago:</strong> ¥ {{ pedido.valor_pago |floatformat:0|intcomma}}</p>
-        <p><strong>Forma de Pagamento:</strong> {{ pedido.get_forma_pagamento_display}}</p>
-        <p><strong>Saldo Devedor:</strong> ¥ {{ pedido.valor_restante |floatformat:0|intcomma }}</p>
-        <p><strong>Status Pagamento:</strong> {{ pedido.status_pagamento |title}} </p>
-        <p><strong>Prazo Pagamento:</strong> {{ pedido.status_pag |title}} </p>
-        <hr>
-        <h3>Itens</h3>
-        {% for item in pedido.itens.all %}
-            <div class="menu-btn">
-                {{ item }}<br>
-                Quantidade: {{ item.quantidade }}<br>
-            </div>
-        {% empty %}
-            <p>Nenhum item pedido.</p>
-        {% endfor %}
-        <hr>
-        {%  if pedido.status == 'ABERTO' %}
-            <h3>Adicionar Item</h3>
-            <form method="POST" onsubmit="alert('enviando')">
+
+<div class="container mt-4">
+
+    <!-- HEADER -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body text-center">
+            <h3>🧾 Pedido #{{ pedido.id }}</h3>
+            <p class="text-muted mb-0">{{ pedido.cliente.nome }}</p>
+        </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <p><strong>📅 Data:</strong> {{ pedido.data_pedido|date:"d/m/Y" }}</p>
+            <p><strong>💰 Total:</strong> ¥{{ pedido.valor_total|floatformat:0|intcomma }}</p>
+            <p><strong>💵 Pago:</strong> ¥{{ pedido.valor_pago|floatformat:0|intcomma }}</p>
+            <p><strong>💳 Forma:</strong> {{ pedido.get_forma_pagamento_display }}</p>
+            <p><strong>📉 Saldo:</strong> ¥{{ pedido.valor_restante|floatformat:0|intcomma }}</p>
+
+            <p>
+                <strong>Status Pagamento:</strong>
+                <span class="badge bg-{% if pedido.status_pagamento == 'PAGO' %}success{% elif pedido.status_pagamento == 'PARCIAL' %}warning{% else %}danger{% endif %}">
+                    {{ pedido.status_pagamento|title }}
+                </span>
+            </p>
+
+        </div>
+    </div>
+
+    <!-- ITENS -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <h5 class="mb-3">📦 Itens</h5>
+
+            {% for item in pedido.itens.all %}
+                <div class="border rounded p-2 mb-2">
+                    <strong>{{ item }}</strong><br>
+                    Quantidade: {{ item.quantidade }}
+                </div>
+            {% empty %}
+                <div class="alert alert-secondary text-center">
+                    Nenhum item no pedido
+                </div>
+            {% endfor %}
+
+        </div>
+    </div>
+
+    {% if pedido.status == 'ABERTO' %}
+
+    <!-- ADICIONAR ITEM -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <h5 class="mb-3">➕ Adicionar Item</h5>
+
+            <form method="POST">
                 {% csrf_token %}
 
-                <label>Tipo:</label>
-                <select name="tipo" id="tipo" required>
-                    <option value="ESTOQUE">Estoque</option>
-                    <option value="ENCOMENDA">Encomenda</option>
-                </select>
-                <div id="campo-produto">
-                    <label>Produto:</label>
-                    <select name="produto">
-                    {% for produto in produtos %}
-                        <option value="{{ produto.id }}">{{ produto.nome_produto }}</option>
-                    {% endfor %}
-                </select>
+                <div class="mb-2">
+                    <label class="form-label">Tipo</label>
+                    <select name="tipo" id="tipo" class="form-select" required>
+                        <option value="ESTOQUE">Estoque</option>
+                        <option value="ENCOMENDA">Encomenda</option>
+                    </select>
                 </div>
-                <div id="campo-nome-produto" style="display: none;">
-                    <label>Nome Produto:</label>
-                    <input type="text" name="nome_produto">
+
+                <div id="campo-produto" class="mb-2">
+                    <label class="form-label">Produto</label>
+                    <select name="produto" class="form-select">
+                        {% for produto in produtos %}
+                            <option value="{{ produto.id }}">{{ produto.nome_produto }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-                <div id="campo-valor" style="display: none;">
-                    <label>Valor unitário:</label>
-                    <input type="number" step="0.01" name="valor_unitario">
+
+                <div id="campo-nome-produto" class="mb-2" style="display:none;">
+                    <label class="form-label">Nome Produto</label>
+                    <input type="text" name="nome_produto" class="form-control">
                 </div>
-                <label>Quantidade:</label>
-                <input type="number" name="quantidade" required>
-                <button type="submit" name='action' value ='adicionar_item' class="menu-btn">
+
+                <div id="campo-valor" class="mb-2" style="display:none;">
+                    <label class="form-label">Valor Unitário</label>
+                    <input type="number" step="0.01" name="valor_unitario" class="form-control">
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label">Quantidade</label>
+                    <input type="number" name="quantidade" class="form-control" required>
+                </div>
+
+                <button type="submit" name="action" value="adicionar_item" class="btn btn-success w-100 mt-2">
                     ➕ Adicionar Item
                 </button>
+
             </form>
-        <form method="post" style="margin-top:10px">
-            {% csrf_token %}
-            <label>Forma de Pagamento:</label>
-            <select name="forma_pagamento" required>
-                <option value="DINHEIRO">Dinheiro</option>
-                <option value="CARTAO">Cartão</option>
-                <option value="TRANSFERENCIA">Transferência</option>
-            </select>
-            <button type="submit" name="action" value="forma_pagamento" class="menu-btn">
-                Definir Forma de Pagamento
-            </button>
-        </form>
-        {% endif %}
-        <form method="post" style="margin-top: 10px">
-            {% csrf_token %}
-            <input type="hidden" name="produto_id" value="{{ produto.id }}">
-            <input type="number" step="0.01" name="valor_pago" placeholder="Adicionar Pagamento">
-            <button name ='action' value = 'atualizar_pagamento' class="menu-btn">
-                🔁 Atualizar Pagamento
-            </button>
-            <button name ='action' value = 'usar_cupom' class="menu-btn">
-                🎁 Usar Cupom (¥1000)
-            </button>
-        </form>
-        <form method="post" style="margin-top: 10px">
-            {% csrf_token %}
-            {%  if pedido.status == 'ABERTO' %}
-                <button name="action" value="finalizar" class="menu-btn">
-                ✅ Finalizar Pedido
-                </button>
-            {% endif %}
-        </form>
-        <button class="menu-btn" onclick="location.href='{% url 'pedido_list' %}'">
-            🔙 Voltar
-        </button>
-        <button class="menu-btn" onclick="location.href='{% url 'home' %}'">
-            🔙 Voltar menu inicial
-        </button>
+
+        </div>
     </div>
+
+    <!-- PAGAMENTO -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <h5 class="mb-3">💳 Pagamento</h5>
+
+            <form method="POST" class="mb-2">
+                {% csrf_token %}
+                <select name="forma_pagamento" class="form-select mb-2" required>
+                    <option value="DINHEIRO">Dinheiro</option>
+                    <option value="CARTAO">Cartão</option>
+                    <option value="TRANSFERENCIA">Transferência</option>
+                </select>
+
+                <button type="submit" name="action" value="forma_pagamento" class="btn btn-primary w-100">
+                    Definir Forma de Pagamento
+                </button>
+            </form>
+
+            <form method="POST">
+                {% csrf_token %}
+                <input type="number" step="0.01" name="valor_pago" class="form-control mb-2" placeholder="Adicionar pagamento">
+
+                <div class="d-grid gap-2">
+                    <button name="action" value="atualizar_pagamento" class="btn btn-warning">
+                        🔁 Atualizar Pagamento
+                    </button>
+
+                    <button name="action" value="usar_cupom" class="btn btn-info">
+                        🎁 Usar Cupom (¥1000)
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    <!-- FINALIZAR -->
+    <div class="d-grid mb-3">
+        <form method="POST">
+            {% csrf_token %}
+            <button name="action" value="finalizar" class="btn btn-success">
+                ✅ Finalizar Pedido
+            </button>
+        </form>
+    </div>
+
+    {% endif %}
+
+    <!-- VOLTAR -->
+    <div class="d-grid gap-2">
+        <a href="{% url 'pedido_list' %}" class="btn btn-outline-secondary">
+            🔙 Voltar
+        </a>
+
+        <a href="{% url 'home' %}" class="btn btn-outline-dark">
+            🏠 Menu Principal
+        </a>
+    </div>
+
+</div>
+
 {% endblock %}

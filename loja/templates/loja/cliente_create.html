@@ -1,0 +1,83 @@
+{% extends "loja/base.html" %}
+{% load static %}
+
+{% block title %}Cadastro de Cliente{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="card shadow-sm mx-auto" style="max-width: 500px;">
+        <div class="card-body">
+
+            <h3 class="text-center mb-4">👤 Cadastro de Cliente</h3>
+
+            {% if erro %}
+                <div class="alert alert-danger">
+                    {{ erro }}
+                </div>
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- NOME -->
+                <div class="mb-3">
+                    <label class="form-label">Nome</label>
+                    <input type="text"
+                           name="nome"
+                           value="{{ nome|default:'' }}"
+                           class="form-control"
+                           placeholder="Digite o nome"
+                           required>
+                </div>
+
+                <!-- TELEFONE -->
+                <div class="mb-3">
+                    <label class="form-label">Telefone</label>
+                    <input type="tel"
+                           id="telefone"
+                           name="telefone"
+                           value="{{ telefone|default:'' }}"
+                           maxlength="13"
+                           inputmode="numeric"
+                           class="form-control"
+                           placeholder="000-0000-0000"
+                           required>
+                </div>
+
+                <!-- ENDEREÇO -->
+                <div class="mb-3">
+                    <label class="form-label">Endereço</label>
+                    <input type="text"
+                           name="endereco"
+                           value="{{ endereco|default:'' }}"
+                           class="form-control"
+                           placeholder="Digite o endereço"
+                           required>
+                </div>
+
+                <!-- BOTÕES -->
+                <div class="d-grid gap-2 mt-4">
+
+                    <button type="submit" class="btn btn-success">
+                        📋 Cadastrar
+                    </button>
+
+                    <a href="{% url 'cliente_list' %}" class="btn btn-outline-secondary">
+                        🔙 Voltar
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- JS -->
+<script src="{% static 'loja/js/auto_formatacao.js' %}"></script>
+
+{% endblock %}

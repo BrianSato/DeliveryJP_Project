@@ -3,18 +3,37 @@
 {% block title %}Produtos{% endblock %}
 
 {% block content %}
-    <div style="width: 100%; max-width: 400px;">
-        <button class="menu-btn" onclick="location.href='{%  url 'produto_estoque_list' %}'">
-        📦 Lista de Produtos em Estoque
-        </button>
-        <button class="menu-btn" onclick="location.href='{%  url 'produto_encomenda_list' %}'">
-        📦 Lista de Produtos Encomendados
-        </button>
-        <button class="menu-btn" onclick="location.href='{%  url 'produto_create' %}'">
-         ➕ Novos Produtos
-        </button>
-        <button class="menu-btn" onclick="location.href='{% url 'home' %}'">
-            🔙 Voltar menu inicial
-        </button>
+
+<div class="container mt-4">
+
+    <div class="card shadow-sm mx-auto" style="max-width: 500px;">
+        <div class="card-body text-center">
+
+            <h3 class="mb-4">📦 Menu de Produtos</h3>
+
+            <div class="d-grid gap-3">
+
+                <a href="{% url 'produto_estoque_list' %}" class="btn btn-primary btn-lg">
+                    📦 Produtos em Estoque
+                </a>
+
+                <a href="{% url 'produto_encomenda_list' %}" class="btn btn-warning btn-lg">
+                    🧾 Produtos Encomendados
+                </a>
+
+                <a href="{% url 'produto_create' %}" class="btn btn-success btn-lg">
+                    ➕ Novo Produto
+                </a>
+
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg">
+                    🔙 Voltar ao Menu Principal
+                </a>
+
+            </div>
+
+        </div>
     </div>
-{% endblock %}>
+
+</div>
+
+{% endblock %}

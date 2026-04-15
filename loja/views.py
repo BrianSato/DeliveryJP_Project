@@ -70,14 +70,14 @@ def cliente_create(request):
         telefone = request.POST.get('telefone','')
         telefone_limpo = re.sub(r'\D','', telefone)
         if len(telefone_limpo) != 11:
-            return render(request,'loja/cliente.html',{
+            return render(request,'loja/cliente_create.html',{
                 'erro': 'Este campo só aceita 11 NÚMEROS',
                 'nome': nome,
                 'telefone':telefone,
                 'endereco': endereco
             })
         if Cliente.objects.filter(telefone=telefone_limpo).exists():
-            return render(request,'loja/cliente.html',{
+            return render(request,'loja/cliente_create.html',{
                 'erro':'Este telefone já está cadastrado',
                 'nome': nome,
                 'telefone':telefone,
@@ -89,7 +89,7 @@ def cliente_create(request):
 
         return redirect('cliente_list')
 
-    return render(request,'loja/cliente.html')
+    return render(request,'loja/cliente_create.html')
 
 def cliente_update(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)

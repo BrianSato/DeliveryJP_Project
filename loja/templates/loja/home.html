@@ -3,21 +3,59 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-    <div style="background:#ffdddd; padding:10px; margin-bottom:10px;">
-      <strong>🔴 Produtos Vencidos:</strong> {{ vencidos_qtd }}
-      <a href="{% url 'estoque_vencidos' %}">Ver</a>
+
+<div class="container mt-4">
+
+    <!-- ALERTAS DE ESTOQUE -->
+    <div class="row mb-3">
+        <div class="col-md-6 mb-2">
+            <div class="alert alert-danger d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>🔴 Produtos Vencidos:</strong> {{ vencidos_qtd }}
+                </div>
+                <a href="{% url 'estoque_vencidos' %}" class="btn btn-sm btn-light">
+                    Ver
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-2">
+            <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>🟡 Produtos Vencendo:</strong> {{ vencendo_qtd }}
+                </div>
+                <a href="{% url 'estoque_vencendo' %}" class="btn btn-sm btn-dark">
+                    Ver
+                </a>
+            </div>
+        </div>
     </div>
 
-    <div style="background:#fff3cd; padding:10px;">
-      <strong>🟡 Produtos Vencendo:</strong> {{ vencendo_qtd }}
-      <a href="{% url 'estoque_vencendo' %}">Ver</a>
+    <!-- MENU PRINCIPAL -->
+    <div class="card shadow-sm">
+        <div class="card-body text-center">
+
+            <h3 class="mb-4">Menu Principal</h3>
+
+            <div class="d-grid gap-3">
+
+                <a href="{% url 'cliente_list' %}" class="btn btn-success btn-lg">
+                    👤 Clientes
+                </a>
+
+                <a href="{% url 'produto_menu' %}" class="btn btn-primary btn-lg">
+                    📦 Produtos
+                </a>
+
+                <a href="{% url 'pedido_list' %}" class="btn btn-warning btn-lg">
+                    🧾 Pedidos
+                </a>
+
+            </div>
+
+        </div>
     </div>
 
-    <div style="width: 100%; max-width: 400px">
-        <h2 style="text-align: center;">Menu Principal</h2>
-        <button class="menu-btn" onclick = "window.location.href='{% url 'cliente_list'%}'">Clientes</button>
-        <button class="menu-btn" onclick = "window.location.href='{% url 'produto_menu'%}'">Produtos</button>
-        <button class="menu-btn" onclick = "window.location.href='{% url 'pedido_list'%}'">Pedidos</button>
-    </div>
+</div>
 
-{% endblock %}>
+{% endblock %}

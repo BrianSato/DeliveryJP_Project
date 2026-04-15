@@ -4,88 +4,108 @@
 {% block title %}Encomenda{% endblock %}
 
 {% block content %}
-<div style="max-width: 900px; margin: 0 auto;">
 
-    <h2>Encomenda de {{ pedido.cliente.nome }}</h2>
+<div class="container mt-4">
 
-    <p><strong>Data:</strong> {{ pedido.data_pedido }}</p>
-    <p><strong>Status Pagamento:</strong>
-        {% if pedido.status_pagamento == "PAGO" %}
-            🟢 Pago
-        {% elif pedido.status_pagamento == "PARCIAL" %}
-            🟡 Parcial
-        {% else %}
-            🔴 Pendente
-        {% endif %}
-    </p>
-
-    <hr>
-      <table style="width:100%; border-collapse: collapse;">
-          <thead style="background:#4CAF50; color:white;">
-              <tr>
-                  <th style="padding:10px;">Produto</th>
-                  <th style="padding:10px;">Quantidade</th>
-                  <th style="padding:10px;">Status Atual</th>
-                  <th style="padding:10px;">Alterar Status</th>
-              </tr>
-          </thead>
-
-          <tbody>
-              {% for item in itens %}
-              <tr style="border-bottom:1px solid #ddd;">
-
-                  <!-- PRODUTO -->
-                  <td style="padding:10px;">
-                      {{ item.produto.nome_produto|default:item.nome_produto }}
-                  </td>
-
-                  <!-- QUANTIDADE -->
-                  <td style="text-align:center;">
-                      {{ item.quantidade }}
-                  </td>
-              {% endfor %}
-                  <!-- STATUS ATUAL -->
-                  <td style="text-align:center;">
-                      {% if pedido.status_encomenda == "PENDENTE" %}
-                          🔴 Aguardando Pedido
-                      {% elif pedido.status_encomenda == "PEDIDO" %}
-                          🟡 Pedido feito
-                      {% elif pedido.status_encomenda == "CHEGOU" %}
-                          🔵 Produto chegou
-                      {% elif pedido.status_encomenda == "ENVIADO" %}
-                          🟣 Enviado
-                      {% elif pedido.status_encomenda == "ENTREGUE" %}
-                          🟢 Entregue
-                      {% else %}
-                          ⚪ {{ pedido.get_status_encomenda_display }}
-                      {% endif %}
-                  </td>
-
-                  <!-- ALTERAR STATUS -->
-                  <td style="text-align:center;">
-
-                          <form method="POST">
-                            {% csrf_token %}
-                              <select name="status_encomenda">
-                              <option selected disabled>{{pedido.get_status_encomenda_display}}</option>
-
-                                {% for status in pedido.proximo_status_permitido %}
-                                <option value="{{ status }}">{{ status }}</option>
-                                  {%empty %}
-                                      <td colspan="4" style="text-align:center; padding:20px;">
-                                          Nenhuma encomenda encontrada
-                                      </td>
-                                  {% endfor %}
-                            </select>
-                              <button type="submit">Atualizar</button>
-                          </form>
-                  </td>
-              </tr>
-          </tbody>
-      </table>
-    <div style="margin-top: 20px; text-align: center;">
-        <a href="{% url 'produto_encomenda_list' %}" class = "menu-btn">🔙 Voltar</a>
-
+    <!-- HEADER -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body text-center">
+            <h3>📦 Encomenda</h3>
+            <p class="mb-0"><strong>{{ pedido.cliente.nome }}</strong></p>
+            <small class="text-muted">{{ pedido.data_pedido|date:"d/m/Y" }}</small>
+        </div>
     </div>
+
+    <!-- STATUS PAGAMENTO -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body text-center">
+
+            <strong>Status Pagamento:</strong><br>
+
+            <span class="badge
+                {% if pedido.status_pagamento == "PAGO" %}
+                    bg-success
+                {% elif pedido.status_pagamento == "PARCIAL" %}
+                    bg-warning
+                {% else %}
+                    bg-danger
+                {% endif %}
+            ">
+                {{ pedido.status_pagamento|title }}
+            </span>
+
+        </div>
+    </div>
+
+    <!-- STATUS ENTREGA -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body text-center">
+
+            <strong>Status da Entrega:</strong><br>
+
+            <span class="badge
+                {% if pedido.status_encomenda == "PENDENTE" %}bg-danger
+                {% elif pedido.status_encomenda == "PEDIDO" %}bg-warning
+                {% elif pedido.status_encomenda == "CHEGOU" %}bg-info
+                {% elif pedido.status_encomenda == "ENVIADO" %}bg-primary
+                {% elif pedido.status_encomenda == "ENTREGUE" %}bg-success
+                {% else %}bg-secondary
+                {% endif %}
+            ">
+                {{ pedido.get_status_encomenda_display }}
+            </span>
+
+        </div>
+    </div>
+
+    <!-- ITENS -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+
+            <h5 class="mb-3">📋 Itens da Encomenda</h5>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Produto</th>
+                            <th class="text-center">Quantidade</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for item in itens %}
+                        <tr>
+                            <td>
+                                {{ item.produto.nome_produto|default:item.nome_produto }}
+                            </td>
+                            <td class="text-center">
+                                {{ item.quantidade }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center py-3">
+                                Nenhum item na encomenda
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- VOLTAR -->
+    <div class="text-center">
+        <a href="{% url 'produto_encomenda_list' %}" class="btn btn-outline-secondary">
+            🔙 Voltar
+        </a>
+    </div>
+
 </div>
+
 {% endblock %}
