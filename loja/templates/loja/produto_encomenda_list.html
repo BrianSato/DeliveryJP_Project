@@ -1,78 +1,164 @@
 {% extends "loja/base.html" %}
 {% load humanize %}
 
-{% block title %}Lista de Produtos{% endblock %}
+{% block title %}Produtos Encomendados{% endblock %}
 
 {% block content %}
-    <div style="width: 100%; max-width: 600px; margin: 0 auto;">
-        <h2 style="text-align: center; margin-bottom: 20px;">Produtos Encomendados</h2>
+<div class="container mt-4">
 
-        <table style="width:100%;border-collapse: collapse; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
-            <thead style="background-color: #4CAF50; color:white">
-                <tr>
-                    <th>Cliente</th>
-                    <th>Data Encomenda</th>
-                    <th>Status Pagamento</th>
-                    <th>Status Entrega</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in itens %}
-                <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 10px;">
-                        <a href="{% url 'pedido_encomenda_detail' item.pedido.id %}">
-                            {{ item.pedido.cliente.nome }}
-                        </a>
-                    </td>
-                    <td style="padding: 10px; text-align: left;">{{ item.pedido.data_pedido }}</td>
-                    <td style="padding: 10px; text-align: leftt;">
-                        {%if item.pedido.status_pagamento == "AGUARDANDO" %}
-                            🔴 Aguardando
-                        {% elif item.pedido.status_pagamento == "PARCIAL" %}
-                            🟡 Parcial
-                        {% elif item.pedido.status_pagamento == "PAGO" %}
-                            ✅ Pago
-                        {% endif %}
-                        </td>
-                    <td style="padding: 10px; text-align: right;">
-                        {% if item.pedido.status_encomenda == "PENDENTE" %}
-                            🔴 Aguardando
-                        {% elif item.pedido.status_encomenda == "PEDIDO" %}
-                            🟡 Pedido
-                        {% elif item.pedido.status_encomenda == "CHEGOU" %}
-                            🔵 Chegou
-                        {% elif item.pedido.status_encomenda == "ENTREGUE" %}
-                            🟢 Entregue
-                        {% else %}
-                            ⚪ {{ item.pedido.get_status_encomenda_display }}
-                        {% endif %}
-                    </td>
-                </tr>
+    <!-- 🔥 HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
 
-                {% empty %}
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 20px;">
-                        Nenhuma encomenda encontrada
-                    </td>
-                </tr>
+        <h3 class="mb-0">Produtos Encomendados</h3>
 
-                {% endfor %}
-            </tbody>
-        </table>
-        <div style="margin-top: 15px; text-align:center;">
-            {% if itens.has_previous %}
-                <a href="?page={{ itens.previous_page_number }}">Anterior</a>
-            {% endif %}
-
-            <span> Página {{ itens.number }} de {{ itens.paginator.num_pages }} </span>
-
-            {% if itens.has_next %}
-                <a href="?page={{ itens.next_page_number }}">Próxima</a>
-            {% endif %}
+        <div class="d-flex gap-2">
+            <a href="{% url 'produto_estoque_list' %}" class="btn btn-secondary btn-sm">
+                Estoque
+            </a>
         </div>
-        <div style="margin-top: 20px; text-align: center;">
-            <a href="{% url 'home' %}" class="menu-btn">🔙 Voltar</a>
+    </div>
+    <!--BUSCA -->
+        <form method="GET" class="mb-3">
+            <input type="text"
+                   name="q"
+                   value="{{ query|default:'' }}"
+                   class="form-control"
+                   placeholder="Buscar produto...">
+        </form>
+    <!-- 📊 TABELA -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover table-striped mb-0 align-middle">
+
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Produto</th>
+                            <th class="text-center">Pagamento</th>
+                            <th class="text-center">Entrega</th>
+                            <th class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                    {% for item in itens %}
+                        <tr>
+
+                            <!-- Cliente -->
+                            <td>
+                                {{ item.nome_produto }}
+                            </td>
+
+                            <!-- Status Pagamento -->
+                            <td class="text-center">
+                                {% if item.pedido.status_pagamento == "AGUARDANDO" %}
+                                    <span class="badge bg-danger">Aguardando</span>
+                                {% elif item.pedido.status_pagamento == "PARCIAL" %}
+                                    <span class="badge bg-warning text-dark">Parcial</span>
+                                {% elif item.pedido.status_pagamento == "PAGO" %}
+                                    <span class="badge bg-success">Pago</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Status Entrega -->
+                            <td class="text-center">
+
+                                <form method="POST">
+                                    {% csrf_token %}
+
+                                    <input type="hidden" name="pedido_id" value="{{ item.pedido.id }}">
+
+                                    <select name="status_encomenda"
+                                            class="form-select form-select-sm"
+                                            onchange="this.form.submit()">
+
+                                        <option value="PENDENTE"
+                                            {% if item.pedido.status_encomenda == "PENDENTE" %}selected{% endif %}>
+                                            🔴 Aguardando
+                                        </option>
+
+                                        <option value="PEDIDO"
+                                            {% if item.pedido.status_encomenda == "PEDIDO" %}selected{% endif %}>
+                                            🟡 Pedido
+                                        </option>
+
+                                        <option value="CHEGOU"
+                                            {% if item.pedido.status_encomenda == "CHEGOU" %}selected{% endif %}>
+                                            🔵 Chegou
+                                        </option>
+
+                                        <option value="ENTREGUE"
+                                            {% if item.pedido.status_encomenda == "ENTREGUE" %}selected{% endif %}>
+                                            🟢 Entregue
+                                        </option>
+
+                                    </select>
+                                </form>
+
+                            </td>
+                            <td class="text-center">
+
+                                <!-- VER / EDITAR PEDIDO -->
+                                <a href="{% url 'pedido_encomenda_detail' item.pedido.id %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    🔍
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center p-4">
+                                Nenhuma encomenda encontrada
+                            </td>
+                        </tr>
+                    {% endfor %}
+
+                    </tbody>
+                </table>
+
+            </div>
         </div>
     </div>
 
+    <!-- 🔄 PAGINAÇÃO -->
+    <div class="d-flex justify-content-center mt-3 gap-2">
+
+        {% if itens.has_previous %}
+            <a href="?page={{ itens.previous_page_number }}" class="btn btn-sm btn-outline-secondary">
+                Anterior
+            </a>
+        {% endif %}
+
+        <span class="align-self-center">
+            Página {{ itens.number }} de {{ itens.paginator.num_pages }}
+        </span>
+
+        {% if itens.has_next %}
+            <a href="?page={{ itens.next_page_number }}" class="btn btn-sm btn-outline-secondary">
+                Próxima
+            </a>
+        {% endif %}
+
+    </div>
+
+    <!-- 🔙 NAVEGAÇÃO -->
+    <div class="d-flex justify-content-center gap-2 mt-4">
+
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+            ← Voltar
+        </a>
+
+        <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
+            🏠 Menu Inicial
+        </a>
+
+    </div>
+
+</div>
 {% endblock %}

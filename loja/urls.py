@@ -36,9 +36,15 @@ urlpatterns = [
     path('produto/', views.produto_menu, name='produto_menu'),
     # produto novo
     path('produto/novo/', views.produto_create, name='produto_create'),
+    #produto estoque editar
+    path('produtos/<int:produto_id>/editar/', views.produto_estoque_update, name='produto_estoque_update'),
+    #produto estoque apagar/desativar
+    path('produtos/<int:produto_id>/delete/', views.produto_estoque_delete, name='produto_estoque_delete'),
+    #produto estoque reativar
+    path('produtos/<int:produto_id>/reativar/', views.produto_estoque_reativar, name='produto_estoque_reativar'),
     #lista de produtos no estoque
     path('produto/lista_estoque/', views.produto_estoque_list, name='produto_estoque_list'),
-    # lista de produtos encomendados
+    #lista de produtos encomendados
     path('produto/lista_encomenda/', views.produto_encomenda_list, name='produto_encomenda_list'),
     #detalhes do produto
     path('produto/<int:id>/', views.produto_detail, name='produto_detail'),

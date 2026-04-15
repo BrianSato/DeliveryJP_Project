@@ -1,0 +1,33 @@
+{% extends "loja/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <h3 class="mb-3">
+        {% if produto %}Editar Produto{% else %}Novo Produto{% endif %}
+    </h3>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label>Nome do Produto</label>
+            {{ form.nome_produto }}
+        </div>
+
+        <div class="mb-3">
+            <label>Preço Unitário</label>
+            {{ form.preco_unitario }}
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            Salvar
+        </button>
+
+        <a href="{% url 'produto_estoque_list' %}" class="btn btn-secondary">
+            Cancelar
+        </a>
+    </form>
+
+</div>
+{% endblock %}

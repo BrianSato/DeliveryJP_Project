@@ -28,7 +28,7 @@
     <form method="GET" class="mb-3">
         <input type="text"
                name="q"
-               value="{{ query }}"
+               value="{{ query|default:'' }}"
                class="form-control"
                placeholder="Buscar por nome ou telefone...">
     </form>
@@ -113,6 +113,20 @@
             </table>
 
         </div>
+    </div>
+    <!-- 🔙 NAVEGAÇÃO -->
+    <div class="d-flex justify-content-center gap-2 mt-4">
+
+        <!-- voltar página anterior -->
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+            ← Voltar
+        </a>
+
+        <!-- menu inicial -->
+        <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
+            🏠 Menu Inicial
+        </a>
+
     </div>
 </div>
 {% endblock %}

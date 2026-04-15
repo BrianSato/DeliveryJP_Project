@@ -11,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 
-from loja.forms import ClienteForm
+from loja.forms import ClienteForm, ProdutoEstoqueForm
 from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
 from loja.utils import criar_lote
 
@@ -189,7 +189,48 @@ def produto_create(request):
         return redirect('produto_estoque_list')
 
     return render(request,'loja/produto_create.html')
-#Tela da Lista de Produtos no Estoque
+#Produto Estoque Editar
+@login_required
+def produto_estoque_update(request, produto_id):
+    produto = get_object_or_404(Produto, id=produto_id)
+
+    if request.method == 'POST':
+        form = ProdutoEstoqueForm(request.POST, instance=produto)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Produto atualizado com sucesso.')
+            return redirect('produto_estoque_list')
+    else:
+        form = ProdutoEstoqueForm(instance=produto)
+
+    return render(request, 'loja/produto_estoque_form.html', {
+        'form': form,
+        'produto': produto
+    })
+#Produto Estoque  Apagar/Desativar
+@login_required
+def produto_estoque_delete(request, produto_id):
+    produto = get_object_or_404(Produto, id=produto_id)
+
+    if request.method == 'POST':
+        produto.ativo = False
+        produto.save()
+        messages.success(request, 'Produto desativado com sucesso.')
+
+    return redirect('produto_estoque_list')
+#Produto Estoque Reativar
+@login_required
+def produto_estoque_reativar(request, produto_id):
+    produto = get_object_or_404(Produto, id=produto_id)
+
+    if request.method == 'POST':
+        produto.ativo = True
+        produto.save()
+        messages.success(request, 'Produto reativado com sucesso.')
+
+    return redirect('produto_estoque_list')
+#Lista de Produtos no Estoque
 @login_required
 def produto_estoque_list(request):
     produtos_list = Produto.objects.all().order_by('-id')
@@ -209,53 +250,93 @@ def produto_estoque_list(request):
 #Tela da Lista de Produtos Encomendados
 @login_required
 def produto_encomenda_list(request):
-    itens_list = ItemPedido.objects.filter(tipo='ENCOMENDA').order_by('-id')
-    paginator = Paginator(itens_list, 10)
-    page_numer = request.GET.get('page')
-    itens = paginator.get_page(page_numer)
+    query = request.GET.get('q')
 
-    return render(request,'loja/produto_encomenda_list.html',{
-        'itens': itens
+    # 🔥 UPDATE STATUS
+    if request.method == 'POST':
+        pedido_id = request.POST.get('pedido_id')
+        novo_status = request.POST.get('status_encomenda')
+
+        if pedido_id and novo_status:
+            pedido = Pedido.objects.get(id=pedido_id)
+
+            if novo_status == 'ENTREGUE' and pedido.status_pagamento != 'PAGO':
+                messages.error(request, 'Não é possível marcar como ENTREGUE sem pagamento completo.')
+                return redirect('produto_encomenda_list')
+
+            pedido.status_encomenda = novo_status
+            pedido.save()
+
+            messages.success(request, 'Status atualizado com sucesso.')
+            return redirect('produto_encomenda_list')
+
+    # 🔥 BASE CORRETA (ItemPedido)
+    itens_list = ItemPedido.objects.filter(tipo='ENCOMENDA').order_by('-id')
+
+    # 🔍 FILTRO PELO NOME DO CLIENTE
+    if query:
+        if query:
+            itens_list = itens_list.filter(
+                Q(nome_produto__icontains=query)
+            )
+
+    paginator = Paginator(itens_list, 10)
+    page_number = request.GET.get('page')
+    itens = paginator.get_page(page_number)
+
+    return render(request, 'loja/produto_encomenda_list.html', {
+        'itens': itens,
+        'query': query
     })
 #Tela de Detalhes do Produtos
 @login_required
-def produto_detail(request,id):
+def produto_detail(request, id):
     produto = get_object_or_404(Produto, id=id)
     hoje = timezone.now().date()
-    filtro = request.GET.get('filtro','')
+    filtro = request.GET.get('filtro', '')
+
     lotes = produto.lotes.all()
 
+    # FILTROS
     if filtro == 'vencidos':
         lotes = lotes.filter(data_validade__lt=hoje)
+
     elif filtro == 'vencendo':
-        lotes = lotes.filter(data_validade__range=(hoje, hoje+timedelta(days=7)))
+        lotes = lotes.filter(
+            data_validade__range=(hoje, hoje + timedelta(days=7))
+        )
+
     else:
         lotes = lotes.filter(quantidade__gt=0)
 
     lotes = lotes.order_by('data_validade')
 
+    # CRIAÇÃO DE LOTE
     if request.method == 'POST':
         quantidade = request.POST.get('quantidade')
         data_validade = request.POST.get('data_validade')
 
-        criar_lote(produto,quantidade,data_validade)
+        if quantidade:
+            criar_lote(produto, quantidade, data_validade)
 
-        return redirect('produto_detail',produto_id= produto.id)
+        return redirect('produto_detail', id=produto.id)
 
-    return render(request,'loja/produto_detail.html',{
-        'produto':produto,
-        'lotes':lotes,
-        'filtro':filtro
+    return render(request, 'loja/produto_detail.html', {
+        'produto': produto,
+        'lotes': lotes,
+        'filtro': filtro
     })
 #Tela de novo Lote do Produto
 @login_required
 def lote_create(request,produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
+
     if request.method == 'POST':
         quantidade = request.POST.get('quantidade')
         data_validade = request.POST.get('data_validade')
 
-        criar_lote(produto,quantidade,data_validade)
+        if quantidade:
+            criar_lote(produto,quantidade,data_validade)
 
         return redirect('produto_detail',id= produto_id)
 
