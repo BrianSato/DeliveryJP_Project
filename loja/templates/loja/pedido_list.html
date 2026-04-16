@@ -73,7 +73,8 @@
 
             {% if pedidos.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ pedidos.previous_page_number }}&q={{ query }}">
+                    <a class="page-link"
+                       href="?page={{ pedidos.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">
                         Anterior
                     </a>
                 </li>
@@ -87,7 +88,8 @@
 
             {% if pedidos.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ pedidos.next_page_number }}&q={{ query }}">
+                    <a class="page-link"
+                       href="?page={{ pedidos.next_page_number }}{% if query %}&q={{ query }}{% endif %}">
                         Próxima
                     </a>
                 </li>

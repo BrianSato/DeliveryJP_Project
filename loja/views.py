@@ -127,7 +127,7 @@ def cliente_list(request):
             Q(telefone__icontains=query)
         )
 
-    paginator = Paginator(clientes_list, 10)
+    paginator = Paginator(clientes_list, 5)
     page_number = request.GET.get('page')
     clientes = paginator.get_page(page_number)
 
@@ -232,9 +232,7 @@ def produto_estoque_reativar(request, produto_id):
 @login_required
 def produto_estoque_list(request):
     hoje = timezone.now().date()
-
     produtos_list = Produto.objects.all().order_by('-id')
-
     query = request.GET.get('q')
     filtro = request.GET.get('filtro', '')
 
@@ -262,7 +260,7 @@ def produto_estoque_list(request):
         produtos_list = produtos_list.filter(tem_vencido=True)
 
     # 📄 PAGINAÇÃO
-    paginator = Paginator(produtos_list, 10)
+    paginator = Paginator(produtos_list, 5)
     page_number = request.GET.get('page')
     produtos = paginator.get_page(page_number)
 
@@ -304,7 +302,7 @@ def produto_encomenda_list(request):
                 Q(nome_produto__icontains=query)
             )
 
-    paginator = Paginator(itens_list, 10)
+    paginator = Paginator(itens_list, 5)
     page_number = request.GET.get('page')
     itens = paginator.get_page(page_number)
 
@@ -409,7 +407,7 @@ def pedido_list(request):
             Q(cliente__nome__icontains=query) |
             Q(cliente__telefone__icontains=query)
         )
-    paginator = Paginator(pedidos_lista, 10)
+    paginator = Paginator(pedidos_lista, 5)
     page_number = request.GET.get('page')
     pedidos = paginator.get_page(page_number)
 
