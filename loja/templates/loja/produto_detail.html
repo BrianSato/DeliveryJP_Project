@@ -37,7 +37,7 @@
     <div class="card shadow-sm mb-3">
         <div class="card-body">
 
-            <h5 class="mb-3">📋 Lotes</h5>
+            <h5 class="mb-3">📋 Lotes Disponíveis</h5>
 
             {% for lote in lotes %}
                 <div class="border rounded p-3 mb-2">
@@ -52,22 +52,78 @@
                         {{ lote.status_lote_colorido }}
                     </p>
 
+                    <!-- 🔧 AÇÕES DO LOTE -->
+                    <div class="mt-2 d-flex gap-2">
+
+                        {% if lote.ativo_real %}
+                            <!-- DESATIVAR -->
+                            <form method="POST" action="{% url 'lote_desativar' lote.id %}">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-danger">
+                                    Desativar
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
                 </div>
             {% empty %}
                 <div class="alert alert-secondary text-center">
                     Nenhum lote cadastrado
                 </div>
             {% endfor %}
+            {% if lotes_vencidos and not filtro %}
+                    <div class="card shadow-sm mb-3 border-danger">
+                        <div class="card-body">
 
+                            <h5 class="mb-3 text-danger">⚠️ Lotes Vencidos</h5>
+
+                            {% for lote in lotes_vencidos %}
+                                <div class="border rounded p-3 mb-2 bg-light">
+
+                                    <p><strong>📦 Quantidade:</strong> {{ lote.quantidade }} unidades</p>
+
+                                    <p><strong>📅 Validade:</strong>
+                                        {{ lote.data_validade }}
+                                    </p>
+
+                                    <span class="badge bg-danger">Vencido</span>
+
+                                </div>
+                            {% empty %}
+                                <div class="alert alert-secondary text-center">
+                                    Nenhum lote vencido
+                                </div>
+                            {% endfor %}
+
+                        </div>
+                    </div>
+                    {% endif %}
         </div>
     </div>
-
     <!-- AÇÕES -->
     <div class="d-grid gap-2">
 
-        <a href="{% url 'lote_create' produto.id %}" class="btn btn-success">
-            ➕ Adicionar Lote
-        </a>
+        {% if produto.ativo %}
+        <!-- DESATIVAR -->
+        <form method="POST"
+              action="{% url 'produto_estoque_delete' produto.id %}"
+              style="display:inline;">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger">
+                🗑️ Desativar produto
+            </button>
+        </form>
+        {% else %}
+        <!-- REATIVAR -->
+        <form method="POST"
+              action="{% url 'produto_estoque_reativar' produto.id %}"
+              style="display:inline;">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-success">
+                ✅ Ativar produto
+            </button>
+        </form>
+        {% endif %}
 
         <a href="{% url 'produto_estoque_list' %}" class="btn btn-outline-secondary">
             🔙 Voltar para Produtos

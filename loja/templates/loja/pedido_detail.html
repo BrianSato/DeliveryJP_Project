@@ -128,13 +128,7 @@
 
             <form method="POST">
                 {% csrf_token %}
-                <input type="number" step="0.01" name="valor_pago" class="form-control mb-2" placeholder="Adicionar pagamento">
-
                 <div class="d-grid gap-2">
-                    <button name="action" value="atualizar_pagamento" class="btn btn-warning">
-                        🔁 Atualizar Pagamento
-                    </button>
-
                     <button name="action" value="usar_cupom" class="btn btn-info">
                         🎁 Usar Cupom (¥1000)
                     </button>
@@ -158,6 +152,17 @@
 
     <!-- VOLTAR -->
     <div class="d-grid gap-2">
+        {%if not pedido.esta_pago %}
+        <form method="POST">
+                {% csrf_token %}
+                <div class="d-grid gap-2">
+                    <input type="number" step="0.01" name="valor_pago" class="form-control mb-2" placeholder="Adicionar pagamento">
+                    <button name="action" value="atualizar_pagamento" class="btn btn-warning">
+                        🔁 Atualizar Pagamento
+                    </button>
+                </div>
+            </form>
+        {% endif %}
         <a href="{% url 'pedido_list' %}" class="btn btn-outline-secondary">
             🔙 Voltar
         </a>

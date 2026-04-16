@@ -80,8 +80,14 @@ class Produto(models.Model):
     ativo = models.BooleanField(default=True)
 
     @property
-    def estoque_disponivel(produto):
-        return produto.lotes.aggregate(total=Sum('quantidade'))['total'] or 0
+    def estoque_disponivel(self):
+        hoje = date.today()
+
+        return self.lotes.filter(
+            ativo=True
+        ).filter(
+            models.Q(data_validade__gte=hoje) | models.Q(data_validade__isnull=True)
+        ).aggregate(total=Sum('quantidade'))['total'] or 0
 
     def total_encomendados(self):
         return self.itens_pedido.filter(
@@ -134,6 +140,17 @@ class LoteProduto(models.Model):
     produto = models.ForeignKey(Produto,on_delete=models.CASCADE,related_name='lotes')
     quantidade = models.IntegerField()
     data_validade = models.DateField(null=True,blank=True)
+    ativo=models.BooleanField(default=True)
+
+    @property
+    def esta_vencido(self):
+        if self.data_validade:
+            return self.data_validade < date.today()
+        return False
+
+    @property
+    def ativo_real(self):
+        return self.ativo and not self.esta_vencido
 
     def status_lote(self):
         if not self.data_validade:
@@ -152,8 +169,11 @@ class LoteProduto(models.Model):
 
         status = self.status_lote()
 
+        if not self.ativo:
+            return mark_safe('<span style="color:gray;font-weight:bold;">•Inativo</span>')
+
         if status == 'VENCIDO':
-            return mark_safe('<span style="color:red;font-weight:bold;">•Vencidos</span>')
+            return mark_safe('<span style="color:red;font-weight:bold;">•Vencido</span>')
         if status == 'VENCIMENTO_PROXIMO':
             return mark_safe('<span style="color:orange;font-weight:bold;">•Vencimento Próximo</span>')
         if status == 'SEM_VALIDADE':
@@ -294,6 +314,9 @@ class Pedido(models.Model):
 
         return True, ""
 
+    @property
+    def esta_pago(self):
+        return self.valor_pago >= self.valor_total
 #===================== ITEM PEDIDO =========================
 
 class ItemPedido(models.Model):

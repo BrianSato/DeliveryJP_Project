@@ -50,6 +50,8 @@ urlpatterns = [
     path('produto/<int:id>/', views.produto_detail, name='produto_detail'),
     #criar lote do produto
     path('lote/novo/<int:produto_id>/', views.lote_create, name='lote_create'),
+    #desativa lote
+    path('lote/<int:pk>/desativar/', views.lote_desativar, name='lote_desativar'),
     #lista de pedidos
     path('pedido/lista/', views.pedido_list, name='pedido_list'),
     #detalhes do pedido

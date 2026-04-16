@@ -56,9 +56,7 @@
 
                         <!-- Nome -->
                         <td>
-                            <a href="{% url 'cliente_detail' cliente.id %}" class="text-decoration-none">
-                                {{ cliente.nome }}
-                            </a>
+                            {{ cliente.nome }}
                         </td>
 
                         <!-- Telefone -->
@@ -78,22 +76,17 @@
                         <!-- Ações -->
                         <td class="text-end">
 
+                            <!-- EDITAR CLIENTE-->
                             <a href="{% url 'cliente_update' cliente.id %}"
-                               class="btn btn-warning btn-sm">
-                                Editar
+                               class="btn btn-sm btn-outline-primary">
+                                    ✏️
                             </a>
 
-                            {% if mostrar_inativos %}
-                                <form method="POST"
-                                      action="{% url 'cliente_reativar' cliente.id %}"
-                                      class="d-inline">
-                                    {% csrf_token %}
-                                    <button class="btn btn-success btn-sm"
-                                            onclick="return confirm('Reativar este cliente?')">
-                                        Reativar
-                                    </button>
-                                </form>
-                            {% endif %}
+                            <!-- VER CLIENTE-->
+                            <a href="{% url 'cliente_detail' cliente.id %}"
+                               class="btn btn-sm btn-outline-primary">
+                                    🔍
+                            </a>
 
                         </td>
 

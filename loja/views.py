@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.utils import timezone
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, OuterRef, Exists
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
@@ -60,7 +60,6 @@ def produtos_vencendo(request):
     return render(request, 'loja/estoque_vencendo.html', {
         'vencendo': vencendo,
     })
-
 #Tela de Novo Cliente
 @login_required
 def cliente_create(request):
@@ -90,7 +89,7 @@ def cliente_create(request):
         return redirect('cliente_list')
 
     return render(request,'loja/cliente_create.html')
-
+#Editar Cliente
 def cliente_update(request, cliente_id):
     cliente = get_object_or_404(Cliente, id=cliente_id)
 
@@ -109,8 +108,7 @@ def cliente_update(request, cliente_id):
         'form': form,
         'cliente': cliente
     })
-
-#Tela de Lista de Clientes
+#Lista de Clientes
 @login_required
 def cliente_list(request):
     query = request.GET.get('q')
@@ -138,7 +136,7 @@ def cliente_list(request):
         'query': query,
         'mostrar_inativos': mostrar_inativos
     })
-#Tela da lista de Cliente
+#Detalhes de Cliente
 @login_required
 def cliente_detail(request,id):
     cliente = get_object_or_404(Cliente, id=id)
@@ -169,11 +167,11 @@ def cliente_reativar(request, cliente_id):
         messages.success(request, 'Cliente reativado com sucesso.')
 
     return redirect('cliente_list')
-#Tela do Menu de Produtos
+#Menu de Produtos
 @login_required
 def produto_menu(request):
     return render(request,'loja/produto_menu.html')
-#Tela de Novo Produto
+#Novo Produto
 @login_required
 def produto_create(request):
     if request.method == 'POST':
@@ -233,21 +231,47 @@ def produto_estoque_reativar(request, produto_id):
 #Lista de Produtos no Estoque
 @login_required
 def produto_estoque_list(request):
+    hoje = timezone.now().date()
+
     produtos_list = Produto.objects.all().order_by('-id')
+
     query = request.GET.get('q')
+    filtro = request.GET.get('filtro', '')
+
+    # 🔍 BUSCA
     if query:
         produtos_list = produtos_list.filter(
             Q(nome_produto__icontains=query)
         )
-    paginator = Paginator(produtos_list, 10)
-    page_numer = request.GET.get('page')
-    produtos = paginator.get_page(page_numer)
 
-    return render(request,'loja/produto_estoque_list.html',{
-        'produtos':produtos,
-        'query':query,
+    # 🔥 SUBQUERY PARA VENCIDOS
+    lotes_vencidos = LoteProduto.objects.filter(
+        produto=OuterRef('pk'),
+        data_validade__lt=hoje
+    )
+
+    produtos_list = produtos_list.annotate(
+        tem_vencido=Exists(lotes_vencidos)
+    )
+
+    # 🔥 FILTROS
+    if filtro == 'validos':
+        produtos_list = produtos_list.filter(tem_vencido=False)
+
+    elif filtro == 'vencidos':
+        produtos_list = produtos_list.filter(tem_vencido=True)
+
+    # 📄 PAGINAÇÃO
+    paginator = Paginator(produtos_list, 10)
+    page_number = request.GET.get('page')
+    produtos = paginator.get_page(page_number)
+
+    return render(request, 'loja/produto_estoque_list.html', {
+        'produtos': produtos,
+        'query': query,
+        'filtro': filtro,
     })
-#Tela da Lista de Produtos Encomendados
+#Lista de Produtos Encomendados
 @login_required
 def produto_encomenda_list(request):
     query = request.GET.get('q')
@@ -288,7 +312,7 @@ def produto_encomenda_list(request):
         'itens': itens,
         'query': query
     })
-#Tela de Detalhes do Produtos
+#Detalhes do Produtos
 @login_required
 def produto_detail(request, id):
     produto = get_object_or_404(Produto, id=id)
@@ -299,15 +323,25 @@ def produto_detail(request, id):
 
     # FILTROS
     if filtro == 'vencidos':
-        lotes = lotes.filter(data_validade__lt=hoje)
+        lotes = lotes.filter(
+            data_validade__lt=hoje,
+            quantidade__gt=0
+        )
 
     elif filtro == 'vencendo':
         lotes = lotes.filter(
-            data_validade__range=(hoje, hoje + timedelta(days=7))
+            data_validade__range=(hoje, hoje + timedelta(days=7)),
+            quantidade__gt=0,
+            ativo=True
         )
 
     else:
-        lotes = lotes.filter(quantidade__gt=0)
+        lotes = lotes.filter(
+            quantidade__gt=0,
+            ativo=True
+        ).filter(
+            Q(data_validade__gte=hoje) | Q(data_validade__isnull=True)
+        )
 
     lotes = lotes.order_by('data_validade')
 
@@ -326,7 +360,7 @@ def produto_detail(request, id):
         'lotes': lotes,
         'filtro': filtro
     })
-#Tela de novo Lote do Produto
+#Novo Lote do Produto
 @login_required
 def lote_create(request,produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
@@ -343,7 +377,14 @@ def lote_create(request,produto_id):
     return render(request,'loja/lote_create.html',{
         'produto': produto
     })
-#Tela de Novo Pedido
+def lote_desativar(request, pk):
+    lote = get_object_or_404(LoteProduto, id=id)
+
+    lote.ativo = False
+    lote.save()
+
+    return redirect('produto_detail', id=lote.produto.id)
+#Novo Pedido
 @login_required
 def pedido_create(request):
     if request.method == 'POST':
@@ -358,7 +399,7 @@ def pedido_create(request):
     return render(request,'loja/pedido_create.html',{
         'clientes':clientes
     })
-#Tela de Lista de Pedidos
+#Lista de Pedidos
 @login_required
 def pedido_list(request):
     pedidos_lista = Pedido.objects.all().order_by('-id')
@@ -376,7 +417,7 @@ def pedido_list(request):
         'pedidos':pedidos,
         'query':query
     })
-#Tela de Detalhes do Pedido
+#Detalhes do Pedido
 @login_required
 def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)

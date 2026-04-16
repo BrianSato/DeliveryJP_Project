@@ -80,28 +80,11 @@
                                         onclick="location.href='{% url 'lote_create' produto.id %}'">
                                     ➕
                                 </button>
-
-                                {% if produto.ativo %}
-                                    <!-- DESATIVAR -->
-                                    <form method="POST"
-                                          action="{% url 'produto_estoque_delete' produto.id %}"
-                                          style="display:inline;">
-                                        {% csrf_token %}
-                                        <button class="btn btn-sm btn-outline-danger">
-                                            🗑️
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <!-- REATIVAR -->
-                                    <form method="POST"
-                                          action="{% url 'produto_estoque_reativar' produto.id %}"
-                                          style="display:inline;">
-                                        {% csrf_token %}
-                                        <button class="btn btn-sm btn-outline-success">
-                                            🔄
-                                        </button>
-                                    </form>
-                                {% endif %}
+                                <!-- VER PRODUTO-->
+                                <a href="{% url 'produto_detail' produto.id %}?filtro=validos"
+                                   class="btn btn-sm btn-outline-primary">
+                                    🔍
+                                </a>
 
                             </td>
                         </tr>
