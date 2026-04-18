@@ -13,7 +13,8 @@ from django.contrib import messages
 
 from loja.forms import ClienteForm, ProdutoEstoqueForm
 from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
-from loja.utils import criar_lote
+from loja.utils import criar_lote, devolver_estoque, devolver_parcial_estoque, baixar_estoque
+
 
 #Tela de login personalizada
 class MyloginView(LoginView):
@@ -419,6 +420,7 @@ def pedido_list(request):
 @login_required
 def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
+    editar_item_id = request.GET.get('editar_item')
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -526,7 +528,8 @@ def pedido_detail(request,pedido_id):
 
     return render(request, 'loja/pedido_detail.html', {
         'pedido': pedido,
-        'produtos': produtos
+        'produtos': produtos,
+        'editar_item_id': editar_item_id,
     })
 @login_required
 def pedido_encomenda_detail(request, pedido_id):
@@ -555,3 +558,52 @@ def pedido_encomenda_detail(request, pedido_id):
         'pedido': pedido,
         'itens': itens
     })
+
+@login_required
+def itempedido_editar(request, id):
+    item = get_object_or_404(ItemPedido, id=id)
+    pedido = item.pedido
+
+    if pedido.status != 'ABERTO':
+        messages.error(request, "Pedido não pode ser alterado.")
+        return redirect('pedido_detail', pedido_id=pedido.id)
+
+    if request.method == 'POST':
+        nova_qtd = int(request.POST.get('quantidade'))
+
+        if item.tipo == 'ESTOQUE':
+
+            # 🔥 1. DEVOLVE TUDO
+            devolver_estoque(item)
+
+            # 🔥 2. APAGA RELAÇÃO COM LOTES
+            item.lotes.all().delete()
+
+            # 🔥 3. BAIXA NOVAMENTE COM NOVA QUANTIDADE
+            baixar_estoque(item.produto, nova_qtd, item)
+
+        # ✔ atualiza quantidade
+        item.quantidade = nova_qtd
+        item.save()
+
+    return redirect('pedido_detail', pedido_id=pedido.id)
+
+@login_required
+def itempedido_delete(request, id):
+    item = get_object_or_404(ItemPedido, id=id)
+    pedido = item.pedido
+
+    # 🔒 regra de negócio
+    if pedido.status != 'ABERTO':
+        messages.error(request, "Pedido não pode ser alterado.")
+        return redirect('pedido_detail', pedido_id=pedido.id)
+
+    if request.method == 'POST':
+
+        # 🔥 DEVOLVER AO ESTOQUE (SE FOR PRODUTO DE ESTOQUE)
+        if item.tipo == 'ESTOQUE':
+            devolver_estoque(item)
+
+        item.delete()
+
+    return redirect('pedido_detail', pedido_id=pedido.id)

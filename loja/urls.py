@@ -58,6 +58,10 @@ urlpatterns = [
     path('pedido/<int:pedido_id>/', views.pedido_detail, name='pedido_detail'),
     #criar novo pedido
     path('pedido/novo/', views.pedido_create, name='pedido_create'),
+    #editar item de pedido
+    path('item/<int:id>/editar/', views.itempedido_editar, name='itempedido_editar'),
+    #apagar item de pedido
+    path('item/<int:id>/deletar/', views.itempedido_delete, name='itempedido_delete'),
     #detalhes da encomenda
     path('pedido/encomenda/<int:pedido_id>/', views.pedido_encomenda_detail, name='pedido_encomenda_detail'),
 ]

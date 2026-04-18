@@ -44,7 +44,7 @@ def baixar_estoque(produto,quantidade,item_pedido):
                 quantidade=quantidade_usada
             )
 
-            quantidade_restante -= lote.quantidade_usada
+            quantidade_restante -= quantidade_usada
             lote.quantidade = 0
             lote.save()
 
@@ -58,6 +58,25 @@ def devolver_estoque(item_pedido):
         lote.save()
 
     item_pedido._estoque_devolvido = True
+
+def devolver_parcial_estoque(item_pedido, quantidade):
+    restante = quantidade
+
+    for registro in item_pedido.lotes.all():
+        if restante <= 0:
+            break
+
+        lote = registro.lote
+
+        devolver = min(registro.quantidade, restante)
+
+        lote.quantidade += devolver
+        lote.save()
+
+        registro.quantidade -= devolver
+        registro.save()
+
+        restante -= devolver
 
 def processar_expiracao_pedido(pedido):
     if pedido.status != 'ATIVO':

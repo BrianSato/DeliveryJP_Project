@@ -42,9 +42,72 @@
             <h5 class="mb-3">📦 Itens</h5>
 
             {% for item in pedido.itens.all %}
-                <div class="border rounded p-2 mb-2">
-                    <strong>{{ item }}</strong><br>
-                    Quantidade: {{ item.quantidade }}
+                <div class="border rounded p-3 mb-2">
+
+                    <div class="d-flex justify-content-between align-items-center">
+
+                        <!-- 🧾 NOME -->
+                        <div>
+                            <strong>{{ item }}</strong><br>
+
+                            {% if editar_item_id == item.id|stringformat:"s" %}
+                                <!-- 🔧 MODO EDIÇÃO -->
+                                <form method="POST"
+                                      action="{% url 'itempedido_editar' item.id %}"
+                                      class="d-flex gap-2 mt-2">
+
+                                    {% csrf_token %}
+
+                                    <input type="number"
+                                           name="quantidade"
+                                           value="{{ item.quantidade }}"
+                                           class="form-control form-control-sm"
+                                           style="width: 80px;">
+
+                                    <button class="btn btn-sm btn-success">
+                                        💾
+                                    </button>
+
+                                    <a href="{% url 'pedido_detail' pedido_id=pedido.id %}"
+                                       class="btn btn-sm btn-secondary">
+                                        Cancelar
+                                    </a>
+                                </form>
+
+                            {% else %}
+                                <!-- 👁️ VISUAL NORMAL -->
+                                Quantidade: {{ item.quantidade }}
+                            {% endif %}
+                        </div>
+
+                        <!-- 🔧 BOTÃO EDITAR -->
+                        {% if pedido.status == 'ABERTO' and editar_item_id != item.id|stringformat:"s" %}
+
+                            <div class="d-flex gap-2">
+
+                                <!-- ✏️ EDITAR -->
+                                <a href="?editar_item={{ item.id }}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    ✏️
+                                </a>
+
+                                <!-- 🗑️ EXCLUIR -->
+                                <form method="POST"
+                                      action="{% url 'itempedido_delete' item.id %}"
+                                      onsubmit="return confirm('Remover este item do pedido?')">
+
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger">
+                                        🗑️
+                                    </button>
+                                </form>
+
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
                 </div>
             {% empty %}
                 <div class="alert alert-secondary text-center">
