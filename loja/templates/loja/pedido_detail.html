@@ -6,7 +6,16 @@
 {% block content %}
 
 <div class="container mt-4">
+    {% if pedido.status_pagamento == 'EXPIRADO' %}
+    <div class="alert alert-danger text-center">
 
+        <strong>⛔ Pedido Expirado</strong><br>
+
+        Este pedido foi cancelado automaticamente.<br>
+        Os itens foram devolvidos ao estoque.
+
+    </div>
+    {% endif %}
     <!-- HEADER -->
     <div class="card shadow-sm mb-3">
         <div class="card-body text-center">
@@ -27,9 +36,15 @@
 
             <p>
                 <strong>Status Pagamento:</strong>
-                <span class="badge bg-{% if pedido.status_pagamento == 'PAGO' %}success{% elif pedido.status_pagamento == 'PARCIAL' %}warning{% else %}danger{% endif %}">
-                    {{ pedido.status_pagamento|title }}
-                </span>
+                {% if pedido.status == 'EXPIRADO' %}
+                    <span class="badge bg-dark">⛔ Expirado</span>
+                {% elif pedido.status_pagamento == 'PAGO' %}
+                    <span class="badge bg-success">Pago</span>
+                {% elif pedido.status_pagamento == 'PARCIAL' %}
+                    <span class="badge bg-warning text-dark">Parcial</span>
+                {% else %}
+                    <span class="badge bg-secondary">Aguardando</span>
+                {% endif %}
             </p>
 
         </div>
@@ -118,7 +133,7 @@
         </div>
     </div>
 
-    {% if pedido.status == 'ABERTO' %}
+    {% if pedido.status == 'ABERTO' and pedido.status_pagamento != 'EXPIRADO' %}
 
     <!-- ADICIONAR ITEM -->
     <div class="card shadow-sm mb-3">

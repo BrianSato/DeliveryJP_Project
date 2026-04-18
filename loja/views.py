@@ -13,7 +13,8 @@ from django.contrib import messages
 
 from loja.forms import ClienteForm, ProdutoEstoqueForm
 from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
-from loja.utils import criar_lote, devolver_estoque, devolver_parcial_estoque, baixar_estoque
+from loja.utils import criar_lote, devolver_estoque, devolver_parcial_estoque, baixar_estoque, \
+    processar_expiracao_pedido
 
 
 #Tela de login personalizada
@@ -420,6 +421,7 @@ def pedido_list(request):
 @login_required
 def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
+    processar_expiracao_pedido(pedido)
     editar_item_id = request.GET.get('editar_item')
 
     if request.method == 'POST':

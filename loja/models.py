@@ -4,6 +4,7 @@ from django.db import models
 from datetime import date, timedelta
 
 from django.db.models import Sum
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from loja.utils import baixar_estoque
 
@@ -200,18 +201,20 @@ class Pedido(models.Model):
         ('ENTREGUE', 'Entregue ao cliente'),
         ('CANCELADO', 'Cancelado')
     ]
+    STATUS_PEDIDO = [
+        ('ABERTO', 'Aberto'),
+        ('FECHADO', 'Fechado'),
+        ('EXPIRADO', 'Expirado'),
+    ]
     cliente = models.ForeignKey(Cliente,on_delete=models.CASCADE, related_name='pedidos')
     data_pedido = models.DateField(auto_now_add=True)
     valor_pago = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     forma_pagamento = models.CharField(max_length=15, choices=FORMA_PAGAMENTO, null=True, blank=True)
     data_limite_pagamento = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=[('ABERTO','Aberto'),('FECHADO','Fechado')], default='ABERTO')
-    status_pag = models.CharField(
+    status = models.CharField(
         max_length=20,
-        choices=[('ATIVO','Ativo'),
-                 ('EXPIRADO','Expirado'),
-                 ],
-        default='ATIVO'
+        choices=STATUS_PEDIDO,
+        default='ABERTO'
     )
     status_encomenda = models.CharField(max_length=15, choices=STATUS_ENCOMENDA, default='PENDENTE')
     pontos_creditados = models.BooleanField(default=False)
@@ -232,12 +235,14 @@ class Pedido(models.Model):
 
     @property
     def status_pagamento(self):
+
+        if self.status == 'EXPIRADO':
+            return 'EXPIRADO'
+
         if self.valor_pago == 0:
             return 'AGUARDANDO'
         elif self.valor_pago < self.valor_total:
             return 'PARCIAL'
-        elif self.status_pag == 'EXPIRADO':
-            return 'CANCELADO, ITEM DEVOLVIDO AO ESTOQUE'
         else:
             return 'PAGO'
 
@@ -317,6 +322,16 @@ class Pedido(models.Model):
     @property
     def esta_pago(self):
         return self.valor_pago >= self.valor_total
+
+    @property
+    def esta_expirado(self):
+        hoje = timezone.now().date()
+
+        return (
+                self.data_limite_pagamento and
+                hoje > self.data_limite_pagamento and
+                self.status != 'FECHADO'
+        )
 #===================== ITEM PEDIDO =========================
 
 class ItemPedido(models.Model):

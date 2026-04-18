@@ -93,7 +93,7 @@ class PedidoAdmin(admin.ModelAdmin):
         'valor_pago_formatado',
         'data_pedido_formatada',
         'data_limite_formatada',
-        'status_pag',
+        'status_pagamento_display',
         'status_encomenda_colorido',
     )
     inlines = [ItemPedidoInline]
@@ -133,6 +133,11 @@ class PedidoAdmin(admin.ModelAdmin):
 
         return mark_safe('<span style="color:red;font-weight:bold;">Cancelado</span>')
     status_encomenda_colorido.short_description = 'Status Item'
+
+    def status_pagamento_display(self, obj):
+        return obj.status_pagamento
+
+    status_pagamento_display.short_description = 'Pagamento'
 
     def valor_total_formatado(self,obj):
         return formatar_iene(obj.valor_total)

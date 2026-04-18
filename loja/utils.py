@@ -79,40 +79,26 @@ def devolver_parcial_estoque(item_pedido, quantidade):
         restante -= devolver
 
 def processar_expiracao_pedido(pedido):
-    if pedido.status != 'ATIVO':
+    if pedido.status != 'ABERTO':
         return
 
-    if pedido.data_limite_pagamento >= timezone.now().date():
+    if not pedido.esta_expirado:
         return
 
     if pedido.status_pagamento == 'PAGO':
-        return  # não expira pedido pago
-
-    logger.info(f"Expiring order {pedido.id}")
+        return
 
     for item in pedido.itens.all():
-        devolver_estoque(item)
+        if item.tipo == 'ESTOQUE':
+            devolver_estoque(item)
 
     pedido.status = 'EXPIRADO'
     pedido.save()
 
-    logger.info(f"Order {pedido.id} expired successfully")
-
 def processar_pedidos_expirados():
     from loja.models import Pedido
-    from django.utils import timezone
 
-    hoje = timezone.now().date()
-
-    pedidos = Pedido.objects.filter(status_pag='ATIVO')
+    pedidos = Pedido.objects.filter(status='ABERTO')
 
     for pedido in pedidos:
-        if not pedido.data_limite_pagamento:
-            continue
-
-        if pedido.data_limite_pagamento < hoje and pedido.status_pagamento != 'PAGO':
-            for item in pedido.itens.all():
-                devolver_estoque(item)
-
-            pedido.status_pag = 'EXPIRADO'
-            pedido.save()
+        processar_expiracao_pedido(pedido)
