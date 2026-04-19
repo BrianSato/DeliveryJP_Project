@@ -80,8 +80,6 @@ class ItemPedidoInline(admin.TabularInline):
             ).distinct()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
     def save_models(self, request, obj, form, formset, change):
-        print('ITEM SALVO',obj)
-        print('PEDIDO RELACIONADO',obj.pedido)
         super().save_model(request,obj,change)
 
 #===================== PEDIDO ========================

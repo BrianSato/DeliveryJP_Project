@@ -91,7 +91,7 @@ if os.environ.get('USE_LOCAL_DB') == '1':
     }
 #---Configuração padrão ( Railway )---
 else:
-    print('USANDO RAILWAY')
+    print('USANDO RENDER')
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),

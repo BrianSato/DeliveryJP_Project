@@ -514,8 +514,6 @@ def pedido_detail(request,pedido_id):
             if pedido.status != 'FECHADO':
                 try:
                     pedido.status = 'FECHADO'
-                    print("ITENS:", pedido.itens.count())
-                    print("FORMA PAGAMENTO:", pedido.forma_pagamento)
                     pedido.save()  # AQUI CHAMA O CLEAN() DO MODEL
 
                 except ValidationError as e:
