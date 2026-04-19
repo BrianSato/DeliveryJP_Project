@@ -7,6 +7,7 @@
 <div class="container mt-4">
 
     <!-- ALERTAS DE ESTOQUE -->
+    {% if vencidos_qtd > 0 %}
     <div class="row mb-3">
         <div class="col-md-6 mb-2">
             <div class="alert alert-danger d-flex justify-content-between align-items-center">
@@ -18,7 +19,9 @@
                 </a>
             </div>
         </div>
-
+    </div>
+    {% endif %}
+    {% if vencendo_qtd > 0 %}
         <div class="col-md-6 mb-2">
             <div class="alert alert-warning d-flex justify-content-between align-items-center">
                 <div>
@@ -29,6 +32,7 @@
                 </a>
             </div>
         </div>
+    {% endif %}
     </div>
 
     <!-- MENU PRINCIPAL -->

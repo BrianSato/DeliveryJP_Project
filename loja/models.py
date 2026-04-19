@@ -136,12 +136,18 @@ class Produto(models.Model):
         return self.nome_produto
 
 #===================== LOTE PRODUTO =========================
+class LoteProdutoManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(ativo=True)
 
 class LoteProduto(models.Model):
     produto = models.ForeignKey(Produto,on_delete=models.CASCADE,related_name='lotes')
     quantidade = models.IntegerField()
     data_validade = models.DateField(null=True,blank=True)
     ativo=models.BooleanField(default=True)
+
+    objects = LoteProdutoManager()
+    all_objects = models.Manager()
 
     @property
     def esta_vencido(self):
@@ -389,10 +395,6 @@ class ItemPedido(models.Model):
 
         # SALVA
         super().save(*args, **kwargs)
-
-        # BAIXA ESTOQUE (somente na criação)
-        if is_new and self.tipo == 'ESTOQUE' and self.produto:
-            baixar_estoque(self.produto, self.quantidade, self)
 
     def __str__(self):
         if self.produto:

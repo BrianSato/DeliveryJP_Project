@@ -30,8 +30,8 @@ class MyloginView(LoginView):
 def home(request):
     hoje = timezone.now().date()
     limite = hoje + timedelta(days=7)
-    vencidos_qtd = LoteProduto.objects.filter(data_validade__lt=hoje).count()
-    vencendo_qtd = LoteProduto.objects.filter(data_validade__range=(hoje,limite)).count()
+    vencidos_qtd = LoteProduto.objects.filter(quantidade__gt=0,data_validade__lt=hoje).count()
+    vencendo_qtd = LoteProduto.objects.filter( data_validade__range=(hoje,limite)).count()
 
     return render(request, 'loja/home.html', {
         'vencidos_qtd': vencidos_qtd,
@@ -41,9 +41,10 @@ def home(request):
 def produtos_vencidos(request):
     hoje = timezone.now().date()
     vencidos = (LoteProduto.objects
-                .filter(data_validade__lt=hoje)
+                .filter(quantidade__gt=0,data_validade__lt=hoje)
                 .values('produto__id','produto__nome_produto')
                 .annotate(total=Sum('quantidade'))
+                .filter(total__gt=0)
                 .order_by('produto__nome_produto')
     )
     return render(request,'loja/estoque_vencidos.html',{
@@ -378,7 +379,7 @@ def lote_create(request,produto_id):
         'produto': produto
     })
 def lote_desativar(request, pk):
-    lote = get_object_or_404(LoteProduto, id=id)
+    lote = get_object_or_404(LoteProduto, id=pk)
 
     lote.ativo = False
     lote.save()
@@ -428,7 +429,7 @@ def pedido_detail(request,pedido_id):
         action = request.POST.get('action')
         # CRIA NOVO ITEM
         if action == 'adicionar_item':
-            # BLOQUEIA CRIAÇÃO DE PEDIDO JÁ FEITO
+
             if pedido.status == 'FECHADO':
                 messages.error(request, 'Pedido já finalizado')
                 return redirect('pedido_detail', pedido_id=pedido.id)
@@ -436,44 +437,42 @@ def pedido_detail(request,pedido_id):
             quantidade = int(request.POST.get('quantidade') or 0)
             tipo = request.POST.get('tipo')
 
-            if tipo == 'ESTOQUE':
-                produto_id = request.POST.get('produto')
-                if produto_id:
+            try:
+                if tipo == 'ESTOQUE':
+                    produto_id = request.POST.get('produto')
                     produto = Produto.objects.get(id=produto_id)
-                    try:
 
-                        item = ItemPedido(
-                            pedido=pedido,
-                            produto=produto,
-                            quantidade=quantidade,
-                            valor_unitario=produto.preco_unitario,
-                            tipo=tipo
-                        )
-                        item.full_clean()
-                        item.save()
-                    except ValidationError as e:
-                        messages.error(request, "Erro ao adicionar item: " + ', '.join(e.messages))
-                        return redirect('pedido_detail', pedido_id=pedido.id)
-
-            elif tipo == 'ENCOMENDA':  # ENCOMENDA
-                nome_produto = request.POST.get('nome_produto')
-                valor_unitario = request.POST.get('valor_unitario')
-
-                try:
                     item = ItemPedido(
                         pedido=pedido,
-                        nome_produto=nome_produto,
+                        produto=produto,
                         quantidade=quantidade,
-                        valor_unitario=valor_unitario,
+                        valor_unitario=produto.preco_unitario,
                         tipo=tipo
                     )
 
-                    item.full_clean()
-                    item.save()
+                elif tipo == 'ENCOMENDA':
+                    item = ItemPedido(
+                        pedido=pedido,
+                        nome_produto=request.POST.get('nome_produto'),
+                        quantidade=quantidade,
+                        valor_unitario=request.POST.get('valor_unitario'),
+                        tipo=tipo
+                    )
 
-                except ValidationError as e:
-                    messages.error(request, "Erro ao adicionar item: " + ', '.join(e.messages))
+                else:
+                    messages.error(request, "Tipo inválido")
                     return redirect('pedido_detail', pedido_id=pedido.id)
+
+                item.full_clean()
+                item.save()
+
+                # REGRA DE NEGÓCIO CENTRALIZADA AQUI
+                if tipo == 'ESTOQUE':
+                    baixar_estoque(produto, quantidade, item)
+
+            except (Produto.DoesNotExist, ValidationError) as e:
+                messages.error(request, f"Erro ao adicionar item: {e}")
+                return redirect('pedido_detail', pedido_id=pedido.id)
 
             return redirect('pedido_detail', pedido_id=pedido.id)
         # PAGAMENTOS

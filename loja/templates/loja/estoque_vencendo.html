@@ -36,26 +36,11 @@
                     </td>
                 </tr>
 
-                {% empty %}
-                <tr>
-                    <td colspan="2" class="text-center py-4">
-                        <div class="alert alert-success mb-0">
-                            ✅ Nenhum produto próximo do vencimento
-                        </div>
-                    </td>
-                </tr>
                 {% endfor %}
             </tbody>
 
         </table>
     </div>
-
-    <!-- ALERTA EXTRA -->
-    {% if vencendo %}
-    <div class="alert alert-warning mt-3 text-center">
-        ⚠️ Atenção: Existem produtos próximos do vencimento. Verifique os lotes!
-    </div>
-    {% endif %}
 
     <!-- VOLTAR -->
     <div class="text-center mt-3">

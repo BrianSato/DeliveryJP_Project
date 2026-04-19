@@ -26,10 +26,6 @@
                 {{ produto.estoque_disponivel }}
             </p>
 
-            <p><strong>⚠️ Status de Validade:</strong>
-                {{ produto.status_validade_colorido }}
-            </p>
-
         </div>
     </div>
 
@@ -55,7 +51,7 @@
                     <!-- 🔧 AÇÕES DO LOTE -->
                     <div class="mt-2 d-flex gap-2">
 
-                        {% if lote.ativo_real %}
+                        {% if lote.esta_vencido %}
                             <!-- DESATIVAR -->
                             <form method="POST" action="{% url 'lote_desativar' lote.id %}">
                                 {% csrf_token %}

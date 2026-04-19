@@ -17,9 +17,10 @@ def criar_lote(produto,quantidade,data_validade):
     )
 def baixar_estoque(produto,quantidade,item_pedido):
     print("BAIXANDO ESTOQUE...")
+    print("QUANTIDADE RECEBIDA:", quantidade)
     from loja.models import ItemPedidoLote
     quantidade_restante = quantidade
-    lotes = produto.lotes.filter(produto=produto).order_by('data_validade')
+    lotes = produto.lotes.filter(ativo=True).order_by('data_validade','id')
 
     for lote in lotes:
         if quantidade_restante <= 0:
