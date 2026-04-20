@@ -423,6 +423,7 @@ def pedido_list(request):
 def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
     processar_expiracao_pedido(pedido)
+    print(">>> PROCESSANDO EXPIRAÇÃO NO DETAIL")
     editar_item_id = request.GET.get('editar_item')
 
     if request.method == 'POST':

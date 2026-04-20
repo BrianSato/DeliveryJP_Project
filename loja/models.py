@@ -56,14 +56,10 @@ class Cliente(models.Model):
         return sum(i.valor_total_item() for i in itens)
 
     def tem_atraso(self):
-        for pedido in self.pedidos.all():
-            if(
-                pedido.data_limite_pagamento and
-                pedido.data_limite_pagamento < date.today() and
-                pedido.status_pagamento != 'PAGO'
-            ):
-                return True
-        return False
+        return any(
+            pedido.status_pagamento == 'EXPIRADO'
+            for pedido in self.pedidos.all()
+        )
 
     def save(self,*args,**kwargs):
         if self.telefone:
@@ -245,12 +241,19 @@ class Pedido(models.Model):
         if self.status == 'EXPIRADO':
             return 'EXPIRADO'
 
+        if self.data_limite_pagamento and self.data_limite_pagamento < timezone.now().date():
+            return 'EXPIRADO'
+
         if self.valor_pago == 0:
             return 'AGUARDANDO'
         elif self.valor_pago < self.valor_total:
             return 'PARCIAL'
         else:
             return 'PAGO'
+
+    @property
+    def pode_atualizar_pagamento(self):
+        return not self.esta_pago and self.status_pagamento != 'EXPIRADO'
 
     def verificar_e_creditar_pontos(self):
         if(
@@ -331,13 +334,10 @@ class Pedido(models.Model):
 
     @property
     def esta_expirado(self):
-        hoje = timezone.now().date()
+        if not self.data_limite_pagamento:
+            return False
 
-        return (
-                self.data_limite_pagamento and
-                hoje > self.data_limite_pagamento and
-                self.status != 'FECHADO'
-        )
+        return self.data_limite_pagamento < timezone.now().date()
 #===================== ITEM PEDIDO =========================
 
 class ItemPedido(models.Model):

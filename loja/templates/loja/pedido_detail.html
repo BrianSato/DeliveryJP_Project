@@ -36,7 +36,7 @@
 
             <p>
                 <strong>Status Pagamento:</strong>
-                {% if pedido.status == 'EXPIRADO' %}
+                {% if pedido.status_pagamento == 'EXPIRADO' %}
                     <span class="badge bg-dark">⛔ Expirado</span>
                 {% elif pedido.status_pagamento == 'PAGO' %}
                     <span class="badge bg-success">Pago</span>
@@ -230,7 +230,7 @@
 
     <!-- VOLTAR -->
     <div class="d-grid gap-2">
-        {%if not pedido.esta_pago %}
+        {%if pedido.pode_atualizar_pagamento %}
         <form method="POST">
                 {% csrf_token %}
                 <div class="d-grid gap-2">
