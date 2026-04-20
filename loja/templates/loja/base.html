@@ -45,7 +45,6 @@
             background-color: #f0f2f5;
         }
 
-        /* container centralizado */
         .main-container{
             max-width: 350px;
             margin: auto;
@@ -80,9 +79,9 @@
 
 <body>
 
-<div class="main-container">
+<div class="{% block container_class %}main-container{% endblock %}">
 
-    <!---BLOCO DE MENSAGENS --->
+    <!-- MENSAGENS -->
     {% if messages %}
         {% for message in messages %}
             <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} text-center">
@@ -91,12 +90,12 @@
         {% endfor %}
     {% endif %}
 
-    <!---BLOCO DE LOGO --->
+    <!-- LOGO -->
     {% block logo %}
     <img src="{% static 'loja/img/logo.png' %}" alt="logo" class="logo">
     {% endblock %}
 
-    <!--- BLOCO DE CONTEÚDO --->
+    <!-- CONTEÚDO -->
     {% block content %}{% endblock %}
 
 </div>
