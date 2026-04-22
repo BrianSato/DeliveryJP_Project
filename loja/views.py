@@ -170,10 +170,6 @@ def cliente_reativar(request, cliente_id):
         messages.success(request, 'Cliente reativado com sucesso.')
 
     return redirect('cliente_list')
-#Menu de Produtos
-@login_required
-def produto_menu(request):
-    return render(request,'loja/produto_menu.html')
 #Novo Produto
 @login_required
 def produto_create(request):

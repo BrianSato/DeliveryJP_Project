@@ -32,8 +32,6 @@ urlpatterns = [
     path('clientes/<int:cliente_id>/delete/', views.cliente_delete, name='cliente_delete'),
     #reativar cliente
     path('clientes/<int:cliente_id>/reativar/', views.cliente_reativar, name='cliente_reativar'),
-    # menu de produtos
-    path('produto/', views.produto_menu, name='produto_menu'),
     # produto novo
     path('produto/novo/', views.produto_create, name='produto_create'),
     #produto estoque editar

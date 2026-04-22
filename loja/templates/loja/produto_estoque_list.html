@@ -3,141 +3,156 @@
 
 {% block title %}Produtos{% endblock %}
 
+{% block container_class %}container-fluid px-4 py-3{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
 
-    <!-- HEADER -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<!-- HEADER -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
 
-        <h3 class="mb-0">Produtos em Estoque</h3>
+    <h3 class="mb-0">Produtos em Estoque</h3>
 
-        <div class="d-flex gap-2">
-            <a href="{% url 'produto_create' %}" class="btn btn-primary btn-sm">
-                + Novo Produto
-            </a>
+    <div class="d-flex flex-wrap gap-2">
 
-            <a href="{% url 'produto_encomenda_list' %}" class="btn btn-secondary btn-sm">
-                Encomendados
-            </a>
-        </div>
+        <a href="{% url 'produto_create' %}" class="btn btn-sm btn-dark">
+            + Novo
+        </a>
+
+        <a href="{% url 'produto_estoque_list' %}" class="btn btn-sm btn-outline-primary">
+            Estoque
+        </a>
+
+        <a href="{% url 'produto_encomenda_list' %}" class="btn btn-sm btn-outline-secondary">
+            Encomenda
+        </a>
+
     </div>
 
-    <!--BUSCA -->
-        <form method="GET" class="mb-3">
-            <input type="text"
-                   name="q"
-                   value="{{ query|default:'' }}"
-                   class="form-control"
-                   placeholder="Buscar produto...">
-        </form>
+</div>
 
-    <!-- TABELA -->
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
+<!-- BUSCA -->
+<form method="GET" class="mb-3">
+    <input type="text"
+           name="q"
+           value="{{ query|default:'' }}"
+           class="form-control"
+           placeholder="Buscar produto...">
+</form>
 
-            <div class="table-responsive">
+<!-- TABELA -->
+<div class="card shadow-sm w-100">
+    <div class="card-body p-0">
 
-                <table class="table table-hover table-striped mb-0 align-middle">
+        <div class="table-responsive">
+            <table class="table w-100 table-hover table-striped mb-0 align-middle">
 
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Produto</th>
-                            <th class="text-end">Preço</th>
-                            <th class="text-end">Estoque</th>
-                            <th class="text-end">Ações</th>
-                        </tr>
-                    </thead>
+                <thead class="table-dark">
+                    <tr>
+                        <th>Produto</th>
+                        <th class="text-end d-none d-md-table-cell">Preço</th>
+                        <th class="text-end">Estoque</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
 
-                    <tbody>
+                <tbody>
 
-                    {% for produto in produtos %}
-                        <tr>
+                {% for produto in produtos %}
+                    <tr>
 
-                            <!-- Nome -->
-                            <td>
-                                {{ produto.nome_produto }}
-                            </td>
+                        <!-- Nome + preço mobile -->
+                        <td>
+                            <strong>{{ produto.nome_produto }}</strong>
 
-                            <!-- Preço -->
-                            <td class="text-end">
+                            <div class="d-md-none text-muted small">
                                 ¥{{ produto.preco_unitario|floatformat:0|intcomma }}
-                            </td>
+                            </div>
+                        </td>
 
-                            <!-- Estoque -->
-                            <td class="text-end">
-                                {{ produto.estoque_disponivel }}
-                            </td>
+                        <!-- Preço desktop -->
+                        <td class="text-end d-none d-md-table-cell">
+                            ¥{{ produto.preco_unitario|floatformat:0|intcomma }}
+                        </td>
 
-                            <td class="text-end">
+                        <!-- Estoque -->
+                        <td class="text-end">
+                            {{ produto.estoque_disponivel }}
+                        </td>
 
-                                <!-- EDITAR NOME E VALOR UNITÁRIO-->
-                                <a href="{% url 'produto_estoque_update' produto.id %}"
-                                   class="btn btn-sm btn-outline-primary">
-                                    ✏️
-                                </a>
-                                <!-- ADICIONAR LOTE AO PRODUTO -->
-                                <button class="btn btn-sm btn-outline-primary"
-                                        onclick="location.href='{% url 'lote_create' produto.id %}'">
-                                    ➕
-                                </button>
-                                <!-- VER PRODUTO-->
-                                <a href="{% url 'produto_detail' produto.id %}?filtro=validos"
-                                   class="btn btn-sm btn-outline-primary">
-                                    🔍
-                                </a>
+                        <!-- Ações -->
+                        <td class="text-end">
 
-                            </td>
-                        </tr>
+                            <a href="{% url 'produto_estoque_update' produto.id %}"
+                               class="btn btn-sm btn-outline-primary px-2">✏️</a>
 
-                    {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center p-4">
-                                Nenhum produto cadastrado
-                            </td>
-                        </tr>
-                    {% endfor %}
+                            <a href="{% url 'lote_create' produto.id %}"
+                               class="btn btn-sm btn-outline-primary px-2">➕</a>
 
-                    </tbody>
+                            <a href="{% url 'produto_detail' produto.id %}?filtro=validos"
+                               class="btn btn-sm btn-outline-primary px-2">🔍</a>
 
-                </table>
+                        </td>
 
-            </div>
+                    </tr>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center p-4">
+                            Nenhum produto cadastrado
+                        </td>
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+
+            </table>
         </div>
-    </div>
 
-    <!-- PAGINAÇÃO -->
-    <div class="d-flex justify-content-center mt-3 gap-2">
+        <!-- PAGINAÇÃO -->
+        {% if produtos.has_other_pages %}
+        <nav class="mt-3 px-2">
+            <ul class="pagination justify-content-center">
 
-        {% if produtos.has_previous %}
-            <a href="?page={{ produtos.previous_page_number }}" class="btn btn-sm btn-outline-secondary">
-                Anterior
-            </a>
+                {% if produtos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ produtos.previous_page_number }}">
+                            Anterior
+                        </a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        {{ produtos.number }} / {{ produtos.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if produtos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ produtos.next_page_number }}">
+                            Próxima
+                        </a>
+                    </li>
+                {% endif %}
+
+            </ul>
+        </nav>
         {% endif %}
-
-        <span class="align-self-center">
-            Página {{ produtos.number }} de {{ produtos.paginator.num_pages }}
-        </span>
-
-        {% if produtos.has_next %}
-            <a href="?page={{ produtos.next_page_number }}" class="btn btn-sm btn-outline-secondary">
-                Próxima
-            </a>
-        {% endif %}
-
-    </div>
-    <!-- NAVEGAÇÃO -->
-    <div class="d-flex justify-content-center gap-2 mt-4">
-
-        <!-- voltar página anterior -->
-        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
-            ← Voltar
-        </a>
-
-        <!-- menu inicial -->
-        <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
-            🏠 Menu Inicial
-        </a>
 
     </div>
 </div>
+
+<!-- NAVEGAÇÃO -->
+<div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+        ← Voltar
+    </a>
+
+    <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
+        🏠 Menu Inicial
+    </a>
+
+</div>
+
 {% endblock %}

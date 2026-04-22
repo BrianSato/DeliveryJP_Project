@@ -1,32 +1,51 @@
 {% extends "loja/base.html" %}
 {% load humanize %}
+{% load static %}
 
 {% block title %}Encomenda{% endblock %}
 
+{% block container_class %}container-fluid px-4 py-3{% endblock %}
+
+{% block logo %}{% endblock %}
+
 {% block content %}
 
-<div class="container mt-4">
+<!-- HEADER -->
 
-    <!-- HEADER -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body text-center">
-            <h3>📦 Encomenda</h3>
-            <p class="mb-0"><strong>{{ pedido.cliente.nome }}</strong></p>
-            <small class="text-muted">{{ pedido.data_pedido|date:"d/m/Y" }}</small>
-        </div>
-    </div>
+<div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
 
-    <!-- STATUS PAGAMENTO -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body text-center">
+<!-- LOGO -->
+<div>
+    <img src="{% static 'loja/img/logo.png' %}" style="max-width:120px;">
+</div>
 
-            <strong>Status Pagamento:</strong><br>
+<!-- TÍTULO -->
+<div class="text-end">
+    <h4 class="mb-1">Detalhes da Encomenda</h4>
+    <h5 class="text-muted mb-0">{{ pedido.cliente.nome }}</h5>
+    <small class="text-muted">
+        {{ pedido.data_pedido|date:"d/m/Y" }}
+    </small>
+</div>
+
+</div>
+
+<!-- STATUS -->
+
+<div class="row g-3">
+
+<!-- 💰 PAGAMENTO -->
+<div class="col-12 col-md-6">
+    <div class="card shadow-sm h-100 text-center">
+        <div class="card-body">
+
+            <h6 class="mb-3">💰 Pagamento</h6>
 
             <span class="badge
                 {% if pedido.status_pagamento == "PAGO" %}
                     bg-success
                 {% elif pedido.status_pagamento == "PARCIAL" %}
-                    bg-warning
+                    bg-warning text-dark
                 {% else %}
                     bg-danger
                 {% endif %}
@@ -36,16 +55,18 @@
 
         </div>
     </div>
+</div>
 
-    <!-- STATUS ENTREGA -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body text-center">
+<!-- 🚚 ENTREGA -->
+<div class="col-12 col-md-6">
+    <div class="card shadow-sm h-100 text-center">
+        <div class="card-body">
 
-            <strong>Status da Entrega:</strong><br>
+            <h6 class="mb-3">🚚 Entrega</h6>
 
             <span class="badge
                 {% if pedido.status_encomenda == "PENDENTE" %}bg-danger
-                {% elif pedido.status_encomenda == "PEDIDO" %}bg-warning
+                {% elif pedido.status_encomenda == "PEDIDO" %}bg-warning text-dark
                 {% elif pedido.status_encomenda == "CHEGOU" %}bg-info
                 {% elif pedido.status_encomenda == "ENVIADO" %}bg-primary
                 {% elif pedido.status_encomenda == "ENTREGUE" %}bg-success
@@ -57,54 +78,64 @@
 
         </div>
     </div>
+</div>
 
-    <!-- ITENS -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
+</div>
 
-            <h5 class="mb-3">📋 Itens da Encomenda</h5>
+<!-- ITENS -->
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
+<div class="card shadow-sm mt-3">
+    <div class="card-body">
 
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Produto</th>
-                            <th class="text-center">Quantidade</th>
-                        </tr>
-                    </thead>
+    <h6 class="mb-3">📋 Itens da Encomenda</h6>
 
-                    <tbody>
-                        {% for item in itens %}
-                        <tr>
-                            <td>
-                                {{ item.produto.nome_produto|default:item.nome_produto }}
-                            </td>
-                            <td class="text-center">
-                                {{ item.quantidade }}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="2" class="text-center py-3">
-                                Nenhum item na encomenda
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
 
-                </table>
-            </div>
+            <thead class="table-dark">
+                <tr>
+                    <th>Produto</th>
+                    <th class="text-center">Quantidade</th>
+                </tr>
+            </thead>
 
-        </div>
+            <tbody>
+                {% for item in itens %}
+                <tr>
+                    <td>
+                        {{ item.produto.nome_produto|default:item.nome_produto }}
+                    </td>
+                    <td class="text-center">
+                        {{ item.quantidade }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" class="text-center py-3">
+                        Nenhum item na encomenda
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
     </div>
 
-    <!-- VOLTAR -->
-    <div class="text-center">
-        <a href="{% url 'produto_encomenda_list' %}" class="btn btn-outline-secondary">
-            🔙 Voltar
-        </a>
-    </div>
+</div>
+
+</div>
+
+<!-- AÇÕES -->
+
+<div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+
+<a href="{% url 'produto_encomenda_list' %}" class="btn btn-outline-secondary btn-sm">
+    ← Encomendas
+</a>
+
+<a href="{% url 'home' %}" class="btn btn-outline-dark btn-sm">
+    🏠 Menu
+</a>
 
 </div>
 

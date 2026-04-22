@@ -1,103 +1,118 @@
 {% extends "loja/base.html" %}
 {% load humanize %}
+{% load static %}
 
 {% block title %}Informações do Cliente{% endblock %}
 
+{% block container_class %}container-fluid px-4 py-3{% endblock %}
+
+{% block logo %}{% endblock %}
+
 {% block content %}
 
-<div class="container mt-4">
+<!-- HEADER COM LOGO -->
 
-    <!-- 👤 NOME -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body text-center">
-            <h3>{{ cliente.nome }}</h3>
-        </div>
-    </div>
+<div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
 
-    <!-- 📋 INFORMAÇÕES -->
-    <div class="card shadow-sm mb-3">
+<!-- LOGO À ESQUERDA -->
+<div>
+    <img src="{% static 'loja/img/logo.png' %}" style="max-width:120px;">
+</div>
+
+<!-- TÍTULO + NOME -->
+<div class="text-end">
+    <h4 class="mb-1">Detalhes do Cliente</h4>
+    <h5 class="text-muted mb-0">{{ cliente.nome }}</h5>
+</div>
+
+</div>
+
+<!-- CARDS -->
+
+<div class="row g-3">
+
+<div class="col-12 col-md-6">
+    <div class="card shadow-sm h-100">
         <div class="card-body">
 
-            <p><strong>📞 Telefone:</strong> {{ cliente.telefone_formatado }}</p>
-            <p><strong>🏠 Endereço:</strong> {{ cliente.endereco }}</p>
-            <p><strong>⭐ Pontos:</strong> {{ cliente.pontos }}</p>
-            <p><strong>🎁 Cupons:</strong> {{ cliente.cupons }}</p>
+            <h6 class="mb-3">📋 Informações</h6>
+
+            <p class="mb-1"><strong>📞 Telefone:</strong> {{ cliente.telefone_formatado }}</p>
+            <p class="mb-1"><strong>🏠 Endereço:</strong> {{ cliente.endereco }}</p>
+            <p class="mb-1"><strong>⭐ Pontos:</strong> {{ cliente.pontos }}</p>
+            <p class="mb-0"><strong>🎁 Cupons:</strong> {{ cliente.cupons }}</p>
 
         </div>
     </div>
+</div>
 
-    <!-- 💰 FINANCEIRO -->
-    <div class="card shadow-sm mb-3">
+<div class="col-12 col-md-6">
+    <div class="card shadow-sm h-100">
         <div class="card-body">
 
-            <p>
-                <strong>💲 Saldo Devedor:</strong>
+            <h6 class="mb-3">💰 Financeiro</h6>
+
+            <p class="mb-1">
+                <strong>💲 Saldo:</strong>
                 ¥{{ cliente.saldo_devedor_total|floatformat:0|intcomma }}
             </p>
 
-            <p>
-                <strong>📅 Data Limite:</strong>
+            <p class="mb-1">
+                <strong>📅 Limite:</strong>
                 {{ cliente.proxima_data_limite }}
             </p>
 
-            <p>
+            <p class="mb-0">
                 <strong>Status:</strong>
 
                 {% if cliente.tem_atraso %}
-                    <span class="badge bg-danger">
-                        ⚠️ Em atraso
-                    </span>
+                    <span class="badge bg-danger">⚠️ Em atraso</span>
                 {% else %}
-                    <span class="badge bg-success">
-                        ✅ Em dia
-                    </span>
+                    <span class="badge bg-success">✅ Em dia</span>
                 {% endif %}
             </p>
 
         </div>
     </div>
+</div>
 
-    <!-- ⚙️ AÇÕES -->
-    <div class="d-grid gap-2">
+</div>
 
-        {% if cliente.ativo %}
+<!-- AÇÕES -->
 
-            <!-- 🔴 DESATIVAR -->
-            <form method="POST" action="{% url 'cliente_delete' cliente.id %}">
-                {% csrf_token %}
-                <button type="submit"
-                        class="btn btn-outline-danger"
-                        onclick="return confirm('Tem certeza que deseja desativar este cliente?')">
-                    🗑️ Desativar Cliente
-                </button>
-            </form>
+<div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
 
-        {% else %}
+{% if cliente.ativo %}
 
-            <!-- 🟢 ATIVAR -->
-            <form method="POST" action="{% url 'cliente_reativar' cliente.id %}">
-                {% csrf_token %}
-                <button type="submit"
-                        class="btn btn-outline-success"
-                        onclick="return confirm('Deseja reativar este cliente?')">
-                    ✅ Ativar Cliente
-                </button>
-            </form>
+    <form method="POST" action="{% url 'cliente_delete' cliente.id %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="btn btn-outline-danger btn-sm">
+            🗑️ Desativar
+        </button>
+    </form>
 
-        {% endif %}
+{% else %}
 
-        <!-- 🔙 VOLTAR -->
-        <a href="{% url 'cliente_list' %}" class="btn btn-outline-secondary">
-            🔙 Voltar para Clientes
-        </a>
+    <form method="POST" action="{% url 'cliente_reativar' cliente.id %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="btn btn-outline-success btn-sm">
+            ✅ Ativar
+        </button>
+    </form>
 
-        <!-- 🏠 HOME -->
-        <a href="{% url 'home' %}" class="btn btn-outline-dark">
-            🏠 Menu Principal
-        </a>
+{% endif %}
 
-    </div>
+<a href="{% url 'cliente_list' %}" class="btn btn-outline-secondary btn-sm">
+    ← Clientes
+</a>
+
+<a href="{% url 'home' %}" class="btn btn-outline-dark btn-sm">
+    🏠 Menu
+</a>
 
 </div>
 
 {% endblock %}
+

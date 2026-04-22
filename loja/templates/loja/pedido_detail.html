@@ -1,159 +1,197 @@
 {% extends "loja/base.html" %}
 {% load humanize %}
+{% load static %}
 
 {% block title %}Detalhes do Pedido{% endblock %}
 
+{% block container_class %}container-fluid px-4 py-3{% endblock %}
+
+{% block logo %}{% endblock %}
+
 {% block content %}
 
-<div class="container mt-4">
-    {% if pedido.status_pagamento == 'EXPIRADO' %}
-    <div class="alert alert-danger text-center">
+{% if pedido.status_pagamento == 'EXPIRADO' %}
 
-        <strong>⛔ Pedido Expirado</strong><br>
+<div class="alert alert-danger text-center">
+    <strong>⛔ Pedido Expirado</strong><br>
+    Este pedido foi cancelado automaticamente.<br>
+    Os itens foram devolvidos ao estoque.
+</div>
+{% endif %}
 
-        Este pedido foi cancelado automaticamente.<br>
-        Os itens foram devolvidos ao estoque.
+<!-- HEADER + FINANCEIRO -->
 
-    </div>
-    {% endif %}
-    <!-- HEADER -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body text-center">
-            <h3>🧾 Pedido #{{ pedido.id }}</h3>
-            <p class="text-muted mb-0">{{ pedido.cliente.nome }}</p>
+<div class="row g-3 mb-3 align-items-stretch">
+
+<!-- ESQUERDA: LOGO + PEDIDO -->
+<div class="col-12 col-lg-5 d-flex">
+    <div class="card shadow-sm w-100">
+        <div class="card-body d-flex align-items-center gap-3">
+
+            <!-- LOGO -->
+            <img src="{% static 'loja/img/logo.png' %}" style="max-width:80px;">
+
+            <!-- INFO -->
+            <div>
+                <h5 class="mb-1">Pedido #{{ pedido.id }}</h5>
+                <div class="text-muted small">
+                    {{ pedido.cliente.nome }}
+                </div>
+                <div class="text-muted small">
+                    {{ pedido.data_pedido|date:"d/m/Y" }}
+                </div>
+            </div>
+
         </div>
     </div>
+</div>
 
-    <!-- INFO -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
+<!-- DIREITA: FINANCEIRO -->
+<div class="col-12 col-lg-7 d-flex">
+    <div class="card shadow-sm w-100">
+        <div class="card-body d-flex flex-column justify-content-center">
 
-            <p><strong>📅 Data:</strong> {{ pedido.data_pedido|date:"d/m/Y" }}</p>
-            <p><strong>💰 Total:</strong> ¥{{ pedido.valor_total|floatformat:0|intcomma }}</p>
-            <p><strong>💵 Pago:</strong> ¥{{ pedido.valor_pago|floatformat:0|intcomma }}</p>
-            <p><strong>💳 Forma:</strong> {{ pedido.get_forma_pagamento_display }}</p>
-            <p><strong>📉 Saldo:</strong> ¥{{ pedido.valor_restante|floatformat:0|intcomma }}</p>
+            <h6 class="mb-3">💰 Financeiro</h6>
 
-            <p>
-                <strong>Status Pagamento:</strong>
-                {% if pedido.status_pagamento == 'EXPIRADO' %}
-                    <span class="badge bg-dark">⛔ Expirado</span>
-                {% elif pedido.status_pagamento == 'PAGO' %}
-                    <span class="badge bg-success">Pago</span>
-                {% elif pedido.status_pagamento == 'PARCIAL' %}
-                    <span class="badge bg-warning text-dark">Parcial</span>
+            <div class="row">
+
+                <div class="col-6 col-md-2">
+                    <small class="text-muted">Total</small><br>
+                    <strong>¥{{ pedido.valor_total|floatformat:0|intcomma }}</strong>
+                </div>
+
+                <div class="col-6 col-md-2">
+                    <small class="text-muted">Pago</small><br>
+                    <strong>¥{{ pedido.valor_pago|floatformat:0|intcomma }}</strong>
+                </div>
+
+                <div class="col-6 col-md-2 mt-2 mt-md-0">
+                    <small class="text-muted">Saldo</small><br>
+                    <strong>¥{{ pedido.valor_restante|floatformat:0|intcomma }}</strong>
+                </div>
+
+                <div class="col-6 col-md-3 mt-2 mt-md-0">
+                    <small class="text-muted">Pagamento</small><br>
+                    <strong>{{ pedido.get_forma_pagamento_display }}</strong>
+                </div>
+
+                <div class="col-6 col-md-2 mt-2 mt-md-0">
+                    <small class="text-muted">Status</small><br>
+
+                    {% if pedido.status_pagamento == 'EXPIRADO' %}
+                        <span class="badge bg-dark">⛔ Expirado</span>
+                    {% elif pedido.status_pagamento == 'PAGO' %}
+                        <span class="badge bg-success">Pago</span>
+                    {% elif pedido.status_pagamento == 'PARCIAL' %}
+                        <span class="badge bg-warning text-dark">Parcial</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Aguardando</span>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</div>
+
+
+<!-- ITENS -->
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+
+    <h6 class="mb-3">📦 Itens</h6>
+
+    {% for item in pedido.itens.all %}
+    <div class="border rounded p-2 mb-2 small">
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+
+            <div>
+                <strong>{{ item }}</strong><br>
+
+                {% if editar_item_id == item.id|stringformat:"s" %}
+                <form method="POST"
+                      action="{% url 'itempedido_editar' item.id %}"
+                      class="d-flex gap-2 mt-2 flex-wrap">
+
+                    {% csrf_token %}
+
+                    <input type="number"
+                           name="quantidade"
+                           value="{{ item.quantidade }}"
+                           class="form-control form-control-sm"
+                           style="width: 80px;">
+
+                    <button class="btn btn-sm btn-success">💾</button>
+
+                    <a href="{% url 'pedido_detail' pedido_id=pedido.id %}"
+                       class="btn btn-sm btn-outline-secondary">
+                        Cancelar
+                    </a>
+                </form>
                 {% else %}
-                    <span class="badge bg-secondary">Aguardando</span>
+                    Quantidade: {{ item.quantidade }}
                 {% endif %}
-            </p>
+            </div>
+
+            {% if pedido.status == 'ABERTO' and editar_item_id != item.id|stringformat:"s" %}
+            <div class="d-flex gap-2 mt-2">
+
+                <a href="?editar_item={{ item.id }}"
+                   class="btn btn-sm btn-outline-primary">✏️</a>
+
+                <form method="POST"
+                      action="{% url 'itempedido_delete' item.id %}"
+                      onsubmit="return confirm('Remover este item?')">
+
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger">🗑️</button>
+                </form>
+
+            </div>
+            {% endif %}
 
         </div>
+
     </div>
-
-    <!-- ITENS -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-
-            <h5 class="mb-3">📦 Itens</h5>
-
-            {% for item in pedido.itens.all %}
-                <div class="border rounded p-3 mb-2">
-
-                    <div class="d-flex justify-content-between align-items-center">
-
-                        <!-- 🧾 NOME -->
-                        <div>
-                            <strong>{{ item }}</strong><br>
-
-                            {% if editar_item_id == item.id|stringformat:"s" %}
-                                <!-- 🔧 MODO EDIÇÃO -->
-                                <form method="POST"
-                                      action="{% url 'itempedido_editar' item.id %}"
-                                      class="d-flex gap-2 mt-2">
-
-                                    {% csrf_token %}
-
-                                    <input type="number"
-                                           name="quantidade"
-                                           value="{{ item.quantidade }}"
-                                           class="form-control form-control-sm"
-                                           style="width: 80px;">
-
-                                    <button class="btn btn-sm btn-success">
-                                        💾
-                                    </button>
-
-                                    <a href="{% url 'pedido_detail' pedido_id=pedido.id %}"
-                                       class="btn btn-sm btn-secondary">
-                                        Cancelar
-                                    </a>
-                                </form>
-
-                            {% else %}
-                                <!-- 👁️ VISUAL NORMAL -->
-                                Quantidade: {{ item.quantidade }}
-                            {% endif %}
-                        </div>
-
-                        <!-- 🔧 BOTÃO EDITAR -->
-                        {% if pedido.status == 'ABERTO' and editar_item_id != item.id|stringformat:"s" %}
-
-                            <div class="d-flex gap-2">
-
-                                <!-- ✏️ EDITAR -->
-                                <a href="?editar_item={{ item.id }}"
-                                   class="btn btn-sm btn-outline-primary">
-                                    ✏️
-                                </a>
-
-                                <!-- 🗑️ EXCLUIR -->
-                                <form method="POST"
-                                      action="{% url 'itempedido_delete' item.id %}"
-                                      onsubmit="return confirm('Remover este item do pedido?')">
-
-                                    {% csrf_token %}
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        🗑️
-                                    </button>
-                                </form>
-
-                            </div>
-
-                        {% endif %}
-
-                    </div>
-
-                </div>
-            {% empty %}
-                <div class="alert alert-secondary text-center">
-                    Nenhum item no pedido
-                </div>
-            {% endfor %}
-
-        </div>
+    {% empty %}
+    <div class="alert alert-secondary text-center">
+        Nenhum item no pedido
     </div>
+    {% endfor %}
 
-    {% if pedido.status == 'ABERTO' and pedido.status_pagamento != 'EXPIRADO' %}
+</div>
 
-    <!-- ADICIONAR ITEM -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
+</div>
 
-            <h5 class="mb-3">➕ Adicionar Item</h5>
+{% if pedido.status == 'ABERTO' and pedido.status_pagamento != 'EXPIRADO' %}
 
-            <form method="POST">
+<div class="row g-3 align-items-stretch">
+
+<!-- ADICIONAR ITEM -->
+<div class="col-12 col-lg-6 d-flex">
+    <div class="card shadow-sm w-100">
+
+        <div class="card-body d-flex flex-column">
+
+            <h6 class="mb-3">➕ Adicionar Item</h6>
+
+            <form method="POST" class="d-flex flex-column flex-grow-1">
                 {% csrf_token %}
 
-                <div class="mb-2">
-                    <label class="form-label">Tipo</label>
-                    <select name="tipo" id="tipo" class="form-select" required>
-                        <option value="ESTOQUE">Estoque</option>
-                        <option value="ENCOMENDA">Encomenda</option>
-                    </select>
-                </div>
+                <!-- TIPO -->
+                <select name="tipo" id="tipo" class="form-select mb-2" required>
+                    <option value="ESTOQUE">Estoque</option>
+                    <option value="ENCOMENDA">Encomenda</option>
+                </select>
 
+                <!-- PRODUTO -->
                 <div id="campo-produto" class="mb-2">
-                    <label class="form-label">Produto</label>
                     <select name="produto" class="form-select">
                         {% for produto in produtos %}
                             <option value="{{ produto.id }}">{{ produto.nome_produto }}</option>
@@ -161,35 +199,53 @@
                     </select>
                 </div>
 
+                <!-- NOME PRODUTO -->
                 <div id="campo-nome-produto" class="mb-2" style="display:none;">
-                    <label class="form-label">Nome Produto</label>
-                    <input type="text" name="nome_produto" class="form-control">
+                    <input type="text"
+                           name="nome_produto"
+                           class="form-control"
+                           placeholder="Nome do produto">
                 </div>
 
+                <!-- VALOR -->
                 <div id="campo-valor" class="mb-2" style="display:none;">
-                    <label class="form-label">Valor Unitário</label>
-                    <input type="number" step="0.01" name="valor_unitario" class="form-control">
+                    <input type="number"
+                           step="0.01"
+                           name="valor_unitario"
+                           class="form-control"
+                           placeholder="Valor unitário">
                 </div>
 
-                <div class="mb-2">
-                    <label class="form-label">Quantidade</label>
-                    <input type="number" name="quantidade" class="form-control" required>
-                </div>
+                <!-- QUANTIDADE -->
+                <input type="number"
+                       name="quantidade"
+                       class="form-control mb-2"
+                       placeholder="Quantidade"
+                       required>
 
-                <button type="submit" name="action" value="adicionar_item" class="btn btn-success w-100 mt-2">
-                    ➕ Adicionar Item
-                </button>
+                <!-- BOTÃO FIXADO EMBAIXO -->
+                <div class="mt-auto">
+                    <button type="submit"
+                            name="action"
+                            value="adicionar_item"
+                            class="btn btn-outline-success w-100">
+                        ➕ Adicionar
+                    </button>
+                </div>
 
             </form>
 
         </div>
-    </div>
 
-    <!-- PAGAMENTO -->
-    <div class="card shadow-sm mb-3">
+    </div>
+</div>
+
+<!-- PAGAMENTO -->
+<div class="col-12 col-lg-6">
+    <div class="card shadow-sm h-100">
         <div class="card-body">
 
-            <h5 class="mb-3">💳 Pagamento</h5>
+            <h6 class="mb-3">💳 Pagamento</h6>
 
             <form method="POST" class="mb-2">
                 {% csrf_token %}
@@ -199,56 +255,84 @@
                     <option value="TRANSFERENCIA">Transferência</option>
                 </select>
 
-                <button type="submit" name="action" value="forma_pagamento" class="btn btn-primary w-100">
-                    Definir Forma de Pagamento
+                <button type="submit"
+                        name="action"
+                        value="forma_pagamento"
+                        class="btn btn-outline-primary w-100">
+                    Definir Forma
                 </button>
             </form>
 
             <form method="POST">
                 {% csrf_token %}
-                <div class="d-grid gap-2">
-                    <button name="action" value="usar_cupom" class="btn btn-info">
-                        🎁 Usar Cupom (¥1000)
-                    </button>
-                </div>
+                <button name="action"
+                        value="usar_cupom"
+                        class="btn btn-outline-secondary w-100">
+                    🎁 Usar Cupom
+                </button>
             </form>
 
         </div>
     </div>
+</div>
 
-    <!-- FINALIZAR -->
-    <div class="d-grid mb-3">
-        <form method="POST">
-            {% csrf_token %}
-            <button name="action" value="finalizar" class="btn btn-success">
-                ✅ Finalizar Pedido
-            </button>
-        </form>
-    </div>
+</div>
 
-    {% endif %}
+<!-- FINALIZAR -->
 
-    <!-- VOLTAR -->
-    <div class="d-grid gap-2">
-        {%if pedido.pode_atualizar_pagamento %}
-        <form method="POST">
-                {% csrf_token %}
-                <div class="d-grid gap-2">
-                    <input type="number" step="0.01" name="valor_pago" class="form-control mb-2" placeholder="Adicionar pagamento">
-                    <button name="action" value="atualizar_pagamento" class="btn btn-warning">
-                        🔁 Atualizar Pagamento
-                    </button>
-                </div>
-            </form>
-        {% endif %}
-        <a href="{% url 'pedido_list' %}" class="btn btn-outline-secondary">
-            🔙 Voltar
-        </a>
+<div class="d-grid mt-3">
+    <form method="POST">
+        {% csrf_token %}
+        <button name="action"
+                value="finalizar"
+                class="btn btn-success">
+            ✅ Finalizar Pedido
+        </button>
+    </form>
+</div>
 
-        <a href="{% url 'home' %}" class="btn btn-outline-dark">
-            🏠 Menu Principal
-        </a>
-    </div>
+{% endif %}
+
+<!-- PAGAMENTO EXTRA -->
+
+{% if pedido.pode_atualizar_pagamento %}
+
+<div class="card shadow-sm mt-3">
+    <div class="card-body">
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <input type="number"
+               step="0.01"
+               name="valor_pago"
+               class="form-control mb-2"
+               placeholder="Adicionar pagamento">
+
+        <button name="action"
+                value="atualizar_pagamento"
+                class="btn btn-outline-warning w-100">
+            🔁 Atualizar Pagamento
+        </button>
+
+    </form>
+
+</div>
+
+</div>
+{% endif %}
+
+<!-- VOLTAR -->
+
+<div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+
+<a href="{% url 'pedido_list' %}" class="btn btn-outline-secondary btn-sm">
+    ← Pedidos
+</a>
+
+<a href="{% url 'home' %}" class="btn btn-outline-dark btn-sm">
+    🏠 Menu
+</a>
 
 </div>
 
