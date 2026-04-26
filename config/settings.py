@@ -94,7 +94,8 @@ else:
     print('USANDO RENDER')
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600,
         )
     }
 
