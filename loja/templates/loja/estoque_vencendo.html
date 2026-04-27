@@ -2,52 +2,88 @@
 
 {% block title %}Produtos Próx. Vencimento{% endblock %}
 
+{% block container_class %}container-fluid px-4 py-3{% endblock %}
+
 {% block content %}
 
-<div class="container mt-4">
+<!-- HEADER -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
 
-    <h3 class="text-center mb-4">🟠 Produtos Próximos do Vencimento</h3>
+    <h3 class="mb-0 text-warning">🟠 Produtos Próximos do Vencimento</h3>
 
-    <!-- TABELA -->
-    <div class="table-responsive">
-        <table class="table table-hover align-middle shadow-sm">
+</div>
 
-            <thead class="table-warning">
-                <tr>
-                    <th>Produto</th>
-                    <th class="text-end">Quantidade</th>
-                </tr>
-            </thead>
+<!-- TABELA -->
+<div class="card shadow-sm w-100">
+    <div class="card-body p-0">
 
-            <tbody>
+        <div class="table-responsive">
+            <table class="table w-100 table-hover mb-0 align-middle">
+
+                <thead class="table-warning">
+                    <tr>
+                        <th>Produto</th>
+                        <th class="text-end">Qtd</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
                 {% for item in vencendo %}
-                <tr>
-                    <td>
-                        <a href="{% url 'produto_detail' item.produto__id %}?filtro=vencendo"
-                           class="text-decoration-none fw-semibold">
-                            {{ item.produto__nome_produto }}
-                        </a>
-                    </td>
+                    <tr>
 
-                    <td class="text-end">
-                        <span class="badge bg-warning text-dark">
-                            {{ item.total }} unidades
-                        </span>
-                    </td>
-                </tr>
+                        <!-- Nome -->
+                        <td>
+                            <a href="{% url 'produto_detail' item.produto__id %}?filtro=vencendo"
+                               class="text-decoration-none fw-semibold text-dark">
 
+                                {{ item.produto__nome_produto }}
+
+                            </a>
+                        </td>
+
+                        <!-- Quantidade -->
+                        <td class="text-end">
+                            <span class="badge bg-warning text-dark">
+                                {{ item.total }}
+                            </span>
+                        </td>
+
+                    </tr>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="2" class="text-center p-4">
+                            Nenhum produto próximo do vencimento 👍
+                        </td>
+                    </tr>
                 {% endfor %}
-            </tbody>
 
-        </table>
-    </div>
+                </tbody>
 
-    <!-- VOLTAR -->
-    <div class="text-center mt-3">
-        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
-            🔙 Voltar
-        </a>
+            </table>
+        </div>
+
+        <!-- ALERTA -->
+        {% if vencendo %}
+        <div class="alert alert-warning m-3 text-center">
+            ⚠️ Atenção: Existem produtos próximos do vencimento.
+        </div>
+        {% endif %}
+
     </div>
+</div>
+
+<!-- NAVEGAÇÃO -->
+<div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+        ← Voltar
+    </a>
+
+    <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
+        🏠 Menu Inicial
+    </a>
 
 </div>
 

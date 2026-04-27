@@ -2,58 +2,86 @@
 
 {% block title %}Produtos Vencidos{% endblock %}
 
+{% block container_class %}container-fluid px-4 py-3{% endblock %}
+
 {% block content %}
 
-<div class="container mt-4">
+<!-- HEADER -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
 
-    <h3 class="text-center mb-4 text-danger">🔴 Produtos Vencidos</h3>
+    <h3 class="mb-0 text-danger">🔴 Produtos Vencidos</h3>
 
-    <!-- TABELA -->
-    <div class="table-responsive">
-        <table class="table table-hover align-middle shadow-sm">
+</div>
 
-            <thead class="table-danger">
-                <tr>
-                    <th>Produto</th>
-                    <th class="text-end">Quantidade</th>
-                </tr>
-            </thead>
+<!-- TABELA -->
+<div class="card shadow-sm w-100">
+    <div class="card-body p-0">
 
-            <tbody>
+        <div class="table-responsive">
+            <table class="table w-100 table-hover mb-0 align-middle">
+
+                <thead class="table-danger">
+                    <tr>
+                        <th>Produto</th>
+                        <th class="text-end">Qtd</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
                 {% for item in vencidos %}
-                <tr>
-                    <td>
-                        <a href="{% url 'produto_detail' item.produto__id %}?filtro=vencidos"
-                           class="text-decoration-none fw-semibold text-danger">
-                            {{ item.produto__nome_produto }}
-                        </a>
-                    </td>
+                    <tr>
 
-                    <td class="text-end">
-                        <span class="badge bg-danger">
-                            {{ item.total }} unidades
-                        </span>
-                    </td>
-                </tr>
+                        <!-- Nome -->
+                        <td>
+                            <a href="{% url 'produto_detail' item.produto__id %}?filtro=vencidos"
+                               class="text-decoration-none fw-semibold text-danger">
+                                {{ item.produto__nome_produto }}
+                            </a>
+                        </td>
+
+                        <!-- Quantidade (sempre na coluna correta) -->
+                        <td class="text-end">
+                            <span class="badge bg-danger">
+                                {{ item.total }}
+                            </span>
+                        </td>
+
+                    </tr>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="2" class="text-center p-4">
+                            Nenhum produto vencido 🎉
+                        </td>
+                    </tr>
                 {% endfor %}
-            </tbody>
 
-        </table>
-    </div>
+                </tbody>
 
-    <!-- ALERTA CRÍTICO -->
-    {% if vencidos %}
-    <div class="alert alert-danger mt-3 text-center">
-        🚨 Atenção: Existem produtos vencidos! Verifique imediatamente o estoque.
-    </div>
-    {% endif %}
+            </table>
+        </div>
 
-    <!-- VOLTAR -->
-    <div class="text-center mt-3">
-        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
-            🔙 Voltar
-        </a>
+        <!-- ALERTA -->
+        {% if vencidos %}
+        <div class="alert alert-danger m-3 text-center">
+            🚨 Atenção: Existem produtos vencidos! Verifique imediatamente o estoque.
+        </div>
+        {% endif %}
+
     </div>
+</div>
+
+<!-- NAVEGAÇÃO -->
+<div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+        ← Voltar
+    </a>
+
+    <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
+        🏠 Menu Inicial
+    </a>
 
 </div>
 

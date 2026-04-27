@@ -313,6 +313,7 @@ class Pedido(models.Model):
             'ENTREGUE': [],
         }
         return fluxo.get(self.status_encomenda,[])
+
     def pode_mudar_para(self,novo_status):
         #FLUXO BASE
         fluxo = self.proximo_status_permitido

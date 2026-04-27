@@ -1,109 +1,146 @@
 {% extends "loja/base.html" %}
+
+{% block container_class %}container-fluid px-4 py-3{% endblock %}
+
 {% load humanize %}
 
 {% block title %}Pedidos{% endblock %}
 
 {% block content %}
 
-<div class="container mt-4">
+<!-- HEADER -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
 
-    <h3 class="text-center mb-4">🧾 Lista de Pedidos</h3>
+    <h3 class="mb-0">🧾 Pedidos</h3>
 
-    <!-- BOTÃO NOVO PEDIDO -->
-    <div class="mb-3 text-end">
-        <a href="{% url 'pedido_create' %}" class="btn btn-success">
-            ➕ Novo Pedido
-        </a>
-    </div>
+    <a href="{% url 'pedido_create' %}" class="btn btn-sm btn-success">
+        ➕ Novo Pedido
+    </a>
 
-    <!-- BUSCA -->
-    <form method="get" class="mb-3">
-        <input type="text"
-               name="q"
-               placeholder="Buscar por nome ou telefone"
-               value="{{ query|default:'' }}"
-               class="form-control">
-    </form>
+</div>
 
-    <!-- TABELA -->
-    <div class="table-responsive">
-        <table class="table table-hover align-middle shadow-sm">
+<!-- BUSCA -->
+<form method="get" class="mb-3">
+    <input type="text"
+           name="q"
+           placeholder="Buscar por cliente ou telefone..."
+           value="{{ query|default:'' }}"
+           class="form-control">
+</form>
 
-            <thead class="table-dark">
-                <tr>
-                    <th>Cliente</th>
-                    <th>Data</th>
-                    <th class="text-end">Total</th>
-                </tr>
-            </thead>
+<!-- TABELA -->
+<div class="card shadow-sm w-100">
+    <div class="card-body p-0">
 
-            <tbody>
+        <div class="table-responsive">
+            <table class="table w-100 table-hover table-striped mb-0 align-middle">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>Cliente</th>
+                        <th class="d-none d-md-table-cell">Data</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
                 {% for pedido in pedidos %}
-                <tr>
-                    <td>
-                        <a href="{% url 'pedido_detail' pedido.id %}" class="text-decoration-none">
-                            {{ pedido.cliente.nome }}
-                        </a>
-                    </td>
+                    <tr>
 
-                    <td>
-                        {{ pedido.data_pedido|date:"d/m/Y" }}
-                    </td>
+                        <!-- CLIENTE + DATA MOBILE -->
+                        <td>
+                            <a href="{% url 'pedido_detail' pedido.id %}"
+                               class="text-decoration-none fw-bold">
+                                {{ pedido.cliente.nome }}
+                            </a>
 
-                    <td class="text-end">
-                        <strong>¥{{ pedido.valor_total|floatformat:0|intcomma }}</strong>
-                    </td>
-                </tr>
+                            <div class="d-md-none text-muted small">
+                                {{ pedido.data_pedido|date:"d/m/Y" }}
+                            </div>
+                        </td>
+
+                        <!-- DATA DESKTOP -->
+                        <td class="d-none d-md-table-cell">
+                            {{ pedido.data_pedido|date:"d/m/Y" }}
+                        </td>
+
+                        <!-- TOTAL -->
+                        <td class="text-end">
+                            <strong>
+                                ¥{{ pedido.valor_total|floatformat:0|intcomma }}
+                            </strong>
+                        </td>
+
+                        <!-- AÇÕES -->
+                        <td class="text-end">
+                            <a href="{% url 'pedido_detail' pedido.id %}"
+                               class="btn btn-sm btn-outline-primary px-2">
+                                🔍
+                            </a>
+                        </td>
+
+                    </tr>
 
                 {% empty %}
-                <tr>
-                    <td colspan="3" class="text-center py-4">
-                        Nenhum pedido cadastrado
-                    </td>
-                </tr>
+                    <tr>
+                        <td colspan="4" class="text-center p-4">
+                            Nenhum pedido cadastrado
+                        </td>
+                    </tr>
                 {% endfor %}
-            </tbody>
 
-        </table>
-    </div>
+                </tbody>
+            </table>
+        </div>
 
-    <!-- PAGINAÇÃO -->
-    <nav class="mt-3">
-        <ul class="pagination justify-content-center">
+        <!-- PAGINAÇÃO -->
+        {% if pedidos.has_other_pages %}
+        <nav class="mt-3 px-2">
+            <ul class="pagination justify-content-center">
 
-            {% if pedidos.has_previous %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="?page={{ pedidos.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">
-                        Anterior
-                    </a>
+                {% if pedidos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ pedidos.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">
+                        {{ pedidos.number }} / {{ pedidos.paginator.num_pages }}
+                    </span>
                 </li>
-            {% endif %}
 
-            <li class="page-item disabled">
-                <span class="page-link">
-                    Página {{ pedidos.number }} de {{ pedidos.paginator.num_pages }}
-                </span>
-            </li>
+                {% if pedidos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ pedidos.next_page_number }}{% if query %}&q={{ query }}{% endif %}">
+                            Próxima
+                        </a>
+                    </li>
+                {% endif %}
 
-            {% if pedidos.has_next %}
-                <li class="page-item">
-                    <a class="page-link"
-                       href="?page={{ pedidos.next_page_number }}{% if query %}&q={{ query }}{% endif %}">
-                        Próxima
-                    </a>
-                </li>
-            {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
 
-        </ul>
-    </nav>
-
-    <!-- VOLTAR -->
-    <div class="text-center mt-3">
-        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
-            🔙 Voltar
-        </a>
     </div>
+</div>
+
+<!-- NAVEGAÇÃO -->
+<div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+        ← Voltar
+    </a>
+
+    <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
+        🏠 Menu Inicial
+    </a>
 
 </div>
 

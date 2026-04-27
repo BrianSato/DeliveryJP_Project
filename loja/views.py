@@ -231,9 +231,19 @@ def produto_estoque_reativar(request, produto_id):
 @login_required
 def produto_estoque_list(request):
     hoje = timezone.now().date()
-    produtos_list = Produto.objects.all().order_by('-id')
+
     query = request.GET.get('q')
     filtro = request.GET.get('filtro', '')
+    mostrar_inativos = request.GET.get('inativos')
+
+    # 🔥 BASE QUERY
+    produtos_list = Produto.objects.all().order_by('-id')
+
+    # ✅ FILTRO ATIVO / INATIVO
+    if mostrar_inativos:
+        produtos_list = produtos_list.filter(ativo=False)
+    else:
+        produtos_list = produtos_list.filter(ativo=True)
 
     # 🔍 BUSCA
     if query:
@@ -244,14 +254,15 @@ def produto_estoque_list(request):
     # 🔥 SUBQUERY PARA VENCIDOS
     lotes_vencidos = LoteProduto.objects.filter(
         produto=OuterRef('pk'),
-        data_validade__lt=hoje
+        data_validade__lt=hoje,
+        ativo=True
     )
 
     produtos_list = produtos_list.annotate(
         tem_vencido=Exists(lotes_vencidos)
     )
 
-    # 🔥 FILTROS
+    # 🔥 FILTROS (validos / vencidos)
     if filtro == 'validos':
         produtos_list = produtos_list.filter(tem_vencido=False)
 
@@ -267,6 +278,7 @@ def produto_estoque_list(request):
         'produtos': produtos,
         'query': query,
         'filtro': filtro,
+        'mostrar_inativos': mostrar_inativos,
     })
 #Lista de Produtos Encomendados
 @login_required
@@ -280,6 +292,14 @@ def produto_encomenda_list(request):
 
         if pedido_id and novo_status:
             pedido = Pedido.objects.get(id=pedido_id)
+
+            if novo_status == 'PEDIDO' and pedido.status_pagamento != 'PARCIAL':
+                messages.error(request, 'Não é possível marcar como PEDIDO sem pagamento parcial.')
+                return redirect('produto_encomenda_list')
+
+            if novo_status == 'CHEGOU' and pedido.status_pagamento != 'PARCIAL':
+                messages.error(request, 'Não é possível marcar como CHEGOU sem pagamento parcial.')
+                return redirect('produto_encomenda_list')
 
             if novo_status == 'ENTREGUE' and pedido.status_pagamento != 'PAGO':
                 messages.error(request, 'Não é possível marcar como ENTREGUE sem pagamento completo.')
@@ -316,33 +336,49 @@ def produto_detail(request, id):
     hoje = timezone.now().date()
     filtro = request.GET.get('filtro', '')
 
-    lotes = produto.lotes.all()
+    #  PEGAR TODOS OS LOTES
+    todos_lotes = LoteProduto.all_objects.filter(produto=produto)
 
-    # FILTROS
+    #  SEPARAÇÃO BASE
+    lotes_ativos = todos_lotes.filter(
+        ativo=True,
+        quantidade__gt=0
+    )
+
+    lotes_vencidos = todos_lotes.filter(
+        ativo=True,
+        quantidade__gt=0,
+        data_validade__lt=hoje
+    )
+
+    lotes_vencendo = todos_lotes.filter(
+        ativo=True,
+        quantidade__gt=0,
+        data_validade__range=(hoje, hoje + timedelta(days=7))
+    )
+
+    lotes_inativos = todos_lotes.filter(
+        ativo=False
+    )
+
+    #  FILTRO DA TELA
     if filtro == 'vencidos':
-        lotes = lotes.filter(
-            data_validade__lt=hoje,
-            quantidade__gt=0
-        )
+        lotes = lotes_vencidos
 
     elif filtro == 'vencendo':
-        lotes = lotes.filter(
-            data_validade__range=(hoje, hoje + timedelta(days=7)),
-            quantidade__gt=0,
-            ativo=True
-        )
+        lotes = lotes_vencendo
+
+    elif filtro == 'inativos':
+        lotes = lotes_inativos
 
     else:
-        lotes = lotes.filter(
-            quantidade__gt=0,
-            ativo=True
-        ).filter(
+        lotes = lotes_ativos.filter(
             Q(data_validade__gte=hoje) | Q(data_validade__isnull=True)
         )
 
     lotes = lotes.order_by('data_validade')
 
-    # CRIAÇÃO DE LOTE
+    #  CRIAÇÃO DE LOTE
     if request.method == 'POST':
         quantidade = request.POST.get('quantidade')
         data_validade = request.POST.get('data_validade')
@@ -354,7 +390,14 @@ def produto_detail(request, id):
 
     return render(request, 'loja/produto_detail.html', {
         'produto': produto,
+
+        #  lista filtrada
         'lotes': lotes,
+        'lotes_ativos': lotes_ativos,
+        'lotes_vencidos': lotes_vencidos,
+        'lotes_vencendo': lotes_vencendo,
+        'lotes_inativos': lotes_inativos,
+
         'filtro': filtro
     })
 #Novo Lote do Produto
