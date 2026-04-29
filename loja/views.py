@@ -227,6 +227,19 @@ def produto_estoque_reativar(request, produto_id):
         messages.success(request, 'Produto reativado com sucesso.')
 
     return redirect('produto_estoque_list')
+@login_required
+def produtos_inativos(request):
+    itens = (
+        LoteProduto.all_objects
+        .filter(ativo=False)
+        .values('produto__id', 'produto__nome_produto')
+        .annotate(total=Sum('quantidade'))
+        .order_by('produto__nome_produto')
+    )
+
+    return render(request, 'loja/produtos_inativos.html', {
+        'inativos': itens
+    })
 #Lista de Produtos no Estoque
 @login_required
 def produto_estoque_list(request):
@@ -342,7 +355,9 @@ def produto_detail(request, id):
     #  SEPARAÇÃO BASE
     lotes_ativos = todos_lotes.filter(
         ativo=True,
-        quantidade__gt=0
+        quantidade__gt=0,
+    ).filter(
+        Q(data_validade__gte=hoje) | Q(data_validade__isnull=True)
     )
 
     lotes_vencidos = todos_lotes.filter(
@@ -372,9 +387,7 @@ def produto_detail(request, id):
         lotes = lotes_inativos
 
     else:
-        lotes = lotes_ativos.filter(
-            Q(data_validade__gte=hoje) | Q(data_validade__isnull=True)
-        )
+        lotes = lotes_ativos
 
     lotes = lotes.order_by('data_validade')
 
@@ -418,7 +431,7 @@ def lote_create(request,produto_id):
         'produto': produto
     })
 def lote_desativar(request, pk):
-    lote = get_object_or_404(LoteProduto, id=pk)
+    lote = get_object_or_404(LoteProduto.all_objects, id=pk)
 
     lote.ativo = False
     lote.save()

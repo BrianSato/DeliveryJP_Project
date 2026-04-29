@@ -40,6 +40,8 @@ urlpatterns = [
     path('produtos/<int:produto_id>/delete/', views.produto_estoque_delete, name='produto_estoque_delete'),
     #produto estoque reativar
     path('produtos/<int:produto_id>/reativar/', views.produto_estoque_reativar, name='produto_estoque_reativar'),
+    #lista produtos inativos
+    path('produtos/inativos/', views.produtos_inativos, name='produtos_inativos'),
     #lista de produtos no estoque
     path('produto/lista_estoque/', views.produto_estoque_list, name='produto_estoque_list'),
     #lista de produtos encomendados

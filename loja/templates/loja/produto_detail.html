@@ -74,16 +74,6 @@
                     <p class="mb-1">
                         {{ lote.status_lote_colorido }}
                     </p>
-
-                    {% if lote.esta_vencido %}
-                        <form method="POST" action="{% url 'lote_desativar' lote.id %}">
-                            {% csrf_token %}
-                            <button class="btn btn-sm btn-outline-danger">
-                                Desativar
-                            </button>
-                        </form>
-                    {% endif %}
-
                 </div>
             {% empty %}
                 <div class="alert alert-secondary text-center small">
@@ -97,45 +87,11 @@
 
 </div>
 
-<!-- LOTES VENCIDOS -->
-
-{% if lotes_vencidos and not filtro %}
-
-<div class="card shadow-sm mt-3 border-danger">
-    <div class="card-body">
-
-    <h6 class="mb-3 text-danger">⚠️ Lotes Vencidos</h6>
-
-    {% for lote in lotes_vencidos %}
-        <div class="border rounded p-2 mb-2 small bg-light">
-
-            <p class="mb-1">
-                <strong>Qtd:</strong> {{ lote.quantidade }}
-            </p>
-
-            <p class="mb-1">
-                <strong>Validade:</strong> {{ lote.data_validade }}
-            </p>
-
-            <span class="badge bg-danger">Vencido</span>
-
-        </div>
-    {% empty %}
-        <div class="alert alert-secondary text-center small">
-            Nenhum lote vencido
-        </div>
-    {% endfor %}
-
-</div>
-
-</div>
-{% endif %}
-
 <!-- AÇÕES -->
 
 <div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
 
-{% if produto.ativo %}
+{% if produto.ativo  %}
 
     <form method="POST" action="{% url 'produto_estoque_delete' produto.id %}">
         {% csrf_token %}
