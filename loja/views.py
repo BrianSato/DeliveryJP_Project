@@ -227,11 +227,16 @@ def produto_estoque_reativar(request, produto_id):
         messages.success(request, 'Produto reativado com sucesso.')
 
     return redirect('produto_estoque_list')
+#Lista de produtos inativos
 @login_required
 def produtos_inativos(request):
+
     itens = (
         LoteProduto.all_objects
-        .filter(ativo=False)
+        .filter(
+            ativo=False,
+            quantidade__gt=0
+        )
         .values('produto__id', 'produto__nome_produto')
         .annotate(total=Sum('quantidade'))
         .order_by('produto__nome_produto')
@@ -347,15 +352,15 @@ def produto_encomenda_list(request):
 def produto_detail(request, id):
     produto = get_object_or_404(Produto, id=id)
     hoje = timezone.now().date()
-    filtro = request.GET.get('filtro', '')
+    filtro = request.GET.get('filtro', 'ativos')
 
-    #  PEGAR TODOS OS LOTES
+    # PEGAR TODOS OS LOTES
     todos_lotes = LoteProduto.all_objects.filter(produto=produto)
 
-    #  SEPARAÇÃO BASE
+    # BASE
     lotes_ativos = todos_lotes.filter(
         ativo=True,
-        quantidade__gt=0,
+        quantidade__gt=0
     ).filter(
         Q(data_validade__gte=hoje) | Q(data_validade__isnull=True)
     )
@@ -376,42 +381,51 @@ def produto_detail(request, id):
         ativo=False
     )
 
-    #  FILTRO DA TELA
-    if filtro == 'vencidos':
-        lotes = lotes_vencidos
+    # MAPA DE FILTROS (mais escalável 🔥)
+    mapa_filtros = {
+        'ativos': lotes_ativos,
+        'vencidos': lotes_vencidos,
+        'vencendo': lotes_vencendo,
+        'inativos': lotes_inativos,
+    }
 
-    elif filtro == 'vencendo':
-        lotes = lotes_vencendo
+    lotes = mapa_filtros.get(filtro, lotes_ativos).order_by('data_validade')
 
-    elif filtro == 'inativos':
-        lotes = lotes_inativos
+    # FLAG IMPORTANTE 👇
+    modo_inativos = filtro == 'inativos'
 
-    else:
-        lotes = lotes_ativos
+    # TÍTULO DINÂMICO
+    titulo_lotes = {
+        'ativos': 'Lotes Disponíveis',
+        'vencidos': 'Lotes Vencidos',
+        'vencendo': 'Lotes Vencendo',
+        'inativos': 'Lotes INATIVOS',
+    }.get(filtro, 'Lotes Disponíveis')
 
-    lotes = lotes.order_by('data_validade')
-
-    #  CRIAÇÃO DE LOTE
-    if request.method == 'POST':
+    # CRIAÇÃO DE LOTE
+    if request.method == 'POST' and not modo_inativos:
         quantidade = request.POST.get('quantidade')
         data_validade = request.POST.get('data_validade')
 
         if quantidade:
             criar_lote(produto, quantidade, data_validade)
 
-        return redirect('produto_detail', id=produto.id)
+        return redirect(f'/produto/{produto.id}/?filtro={filtro}')
 
     return render(request, 'loja/produto_detail.html', {
         'produto': produto,
-
-        #  lista filtrada
         'lotes': lotes,
+
+        # CONTROLE DE UI
+        'modo_inativos': modo_inativos,
+        'titulo_lotes': titulo_lotes,
+        'filtro': filtro,
+
+        # (opcional – manter se estiver usando em abas/contadores)
         'lotes_ativos': lotes_ativos,
         'lotes_vencidos': lotes_vencidos,
         'lotes_vencendo': lotes_vencendo,
         'lotes_inativos': lotes_inativos,
-
-        'filtro': filtro
     })
 #Novo Lote do Produto
 @login_required

@@ -30,34 +30,36 @@
 <!-- CARDS -->
 
 <div class="row g-3">
+    {% if not modo_inativos %}
+        <!-- 📋 INFORMAÇÕES -->
+        <div class="col-12 col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
 
-<!-- 📋 INFORMAÇÕES -->
-<div class="col-12 col-md-6">
-    <div class="card shadow-sm h-100">
-        <div class="card-body">
+                    <h6 class="mb-3">📋 Informações</h6>
 
-            <h6 class="mb-3">📋 Informações</h6>
+                    <p class="mb-1">
+                        <strong>💰 Preço:</strong>
+                        ¥{{ produto.preco_unitario|floatformat:0|intcomma }}
+                    </p>
 
-            <p class="mb-1">
-                <strong>💰 Preço:</strong>
-                ¥{{ produto.preco_unitario|floatformat:0|intcomma }}
-            </p>
+                    <p class="mb-0">
+                        <strong>📦 Estoque:</strong>
+                        {{ produto.estoque_disponivel }}
+                    </p>
 
-            <p class="mb-0">
-                <strong>📦 Estoque:</strong>
-                {{ produto.estoque_disponivel }}
-            </p>
+                </div>
 
+            </div>
         </div>
-    </div>
-</div>
+    {% endif %}
 
 <!-- 📦 LOTES -->
 <div class="col-12 col-md-6">
     <div class="card shadow-sm h-100">
         <div class="card-body">
 
-            <h6 class="mb-3">📦 Lotes Disponíveis</h6>
+            <h6 class="mb-3">📦 {{titulo_lotes}}</h6>
 
             {% for lote in lotes %}
                 <div class="border rounded p-2 mb-2 small">
@@ -91,23 +93,31 @@
 
 <div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
 
-{% if produto.ativo  %}
+{% if not modo_inativos %}
 
-    <form method="POST" action="{% url 'produto_estoque_delete' produto.id %}">
-        {% csrf_token %}
-        <button class="btn btn-outline-danger btn-sm">
-            🗑️ Desativar
-        </button>
-    </form>
+    {% if produto.ativo %}
 
-{% else %}
+        <form method="POST"
+              action="{% url 'produto_estoque_delete' produto.id %}"
+              onsubmit="event.preventDefault(); openConfirmModal('Desativar este produto?', this);">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm">
+                🗑️ Desativar
+            </button>
+        </form>
 
-    <form method="POST" action="{% url 'produto_estoque_reativar' produto.id %}">
-        {% csrf_token %}
-        <button class="btn btn-outline-success btn-sm">
-            ✅ Ativar
-        </button>
-    </form>
+    {% else %}
+
+        <form method="POST"
+              action="{% url 'produto_estoque_reativar' produto.id %}"
+              onsubmit="event.preventDefault(); openConfirmModal('Reativar este produto?', this);">
+            {% csrf_token %}
+            <button class="btn btn-outline-success btn-sm">
+                ✅ Ativar
+            </button>
+        </form>
+
+    {% endif %}
 
 {% endif %}
 
