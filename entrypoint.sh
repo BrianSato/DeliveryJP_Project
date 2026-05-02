@@ -2,6 +2,7 @@
 
 echo "Applying migrations..."
 python manage.py migrate --noinput
+python manage.py collectstatic --noinput
 
 echo "Creating superuser (if not exists)..."
 
