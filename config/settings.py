@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'fallback_local_key')
 
-ALLOWED_HOSTS = ['deliveryjp-project-4.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['deliveryjp-admin.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
