@@ -10,6 +10,7 @@
 
 {% block content %}
 
+<!-- ALERTAS-->
 {% if pedido.status_pagamento == 'EXPIRADO' %}
 
 <div class="alert alert-danger text-center">
@@ -17,6 +18,12 @@
     Este pedido foi cancelado automaticamente.<br>
     Os itens foram devolvidos ao estoque.
 </div>
+
+<div class="alert alert-danger">
+    ⚠️ Pedido expirado. Entre em contato com o cliente para reativar o pedido.
+    <strong>{{pedido.cliente.telefone}}</strong>
+</div>
+
 {% endif %}
 
 <!-- HEADER + FINANCEIRO -->
@@ -300,26 +307,36 @@
 <div class="card shadow-sm mt-3">
     <div class="card-body">
 
-    <form method="POST">
+        <form method="POST">
+            {% csrf_token %}
+
+            <input type="number"
+                   step="0.01"
+                   name="valor_pago"
+                   class="form-control mb-2"
+                   placeholder="Adicionar pagamento">
+
+            <button name="action"
+                    value="atualizar_pagamento"
+                    class="btn btn-outline-warning w-100">
+                🔁 Atualizar Pagamento
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+{% endif %}
+
+<!-- BOTÃO DE REATIVAR PAGAMENTO  -->
+{% if pedido.status_pagamento == 'EXPIRADO' %}
+    <form method="POST" action="{% url 'reativar_pedido' pedido.id %}">
         {% csrf_token %}
-
-        <input type="number"
-               step="0.01"
-               name="valor_pago"
-               class="form-control mb-2"
-               placeholder="Adicionar pagamento">
-
-        <button name="action"
-                value="atualizar_pagamento"
-                class="btn btn-outline-warning w-100">
-            🔁 Atualizar Pagamento
+        <button class="btn btn-warning btn-sm">
+            🔄 Reativar Pedido
         </button>
-
     </form>
-
-</div>
-
-</div>
 {% endif %}
 
 <!-- VOLTAR -->

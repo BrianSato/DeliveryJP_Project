@@ -20,6 +20,10 @@ urlpatterns = [
     path('estoque_vencendo', views.produtos_vencendo, name='estoque_vencendo'),
     #lista de produtos vencidos
     path('estoque_vencidos', views.produtos_vencidos, name='estoque_vencidos'),
+    #lista de pedidos para análise
+    path('pedidos/analise/', views.pedidos_para_analise, name='pedidos_para_analise'),
+    #reativar pedido expirado
+    path('pedido/<int:pedido_id>/reativar/', views.reativar_pedido, name='reativar_pedido'),
     # lista de clientes
     path('cliente/', views.cliente_list, name='cliente_list'),
     # cliente novo

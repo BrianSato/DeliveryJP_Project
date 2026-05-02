@@ -2,11 +2,9 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from datetime import date, timedelta
-
 from django.db.models import Sum
 from django.utils import timezone
 from django.utils.safestring import mark_safe
-from loja.utils import baixar_estoque
 
 #==================== CONSTANTES =======================
 VALOR_POR_PONTO = 1000
@@ -224,6 +222,16 @@ class Pedido(models.Model):
     desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     @property
+    def precisa_acao(self):
+        hoje = timezone.now().date()
+
+        return (
+                self.data_limite_pagamento is not None and
+                self.data_limite_pagamento < hoje and
+                self.valor_pago < self.valor_total
+        )
+
+    @property
     def valor_total(self):
         total =  sum(item.valor_total_item() for item in self.itens.all())
         return max(total - self.desconto, 0)
@@ -238,22 +246,30 @@ class Pedido(models.Model):
     @property
     def status_pagamento(self):
 
+        # 1. Pagamento completo
+        if self.valor_pago >= self.valor_total:
+            return 'PAGO'
+
+        #  2. Status manual
         if self.status == 'EXPIRADO':
             return 'EXPIRADO'
 
+        #  3. Expiração por data
         if self.data_limite_pagamento and self.data_limite_pagamento < timezone.now().date():
             return 'EXPIRADO'
 
+        #  4. Restante
         if self.valor_pago == 0:
             return 'AGUARDANDO'
-        elif self.valor_pago < self.valor_total:
-            return 'PARCIAL'
         else:
-            return 'PAGO'
+            return 'PARCIAL'
 
     @property
     def pode_atualizar_pagamento(self):
-        return not self.esta_pago and self.status_pagamento != 'EXPIRADO'
+        return (
+                not self.esta_pago and
+                self.status != 'EXPIRADO'
+        )
 
     def verificar_e_creditar_pontos(self):
         if(

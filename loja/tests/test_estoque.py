@@ -137,9 +137,6 @@ class EstoqueFIFOTestCase(TestCase):
 
         self.assertEqual(lote_antigo.quantidade, 5)
         self.assertEqual(lote_novo.quantidade, 10)
-
-
-
 class DevolucaoEstoqueTestCase(TestCase):
 
     def test_devolver_estoque_retorna_fifo_corretamente(self):
@@ -293,4 +290,109 @@ class DevolucaoEstoqueTestCase(TestCase):
 
         lote.refresh_from_db()
         self.assertEqual(lote.quantidade, 6)
+class FluxoPedidoEstoqueTestCase(TestCase):
 
+    def test_expirar_pedido_devolve_estoque(self):
+        cliente = Cliente.objects.create(nome="Cliente Teste")
+
+        produto = Produto.objects.create(
+            nome_produto="Produto Teste",
+            preco_unitario=10
+        )
+
+        lote = LoteProduto.objects.create(
+            produto=produto,
+            quantidade=10,
+            data_validade=date.today() + timedelta(days=10),
+            ativo=True
+        )
+
+        pedido = Pedido.objects.create(cliente=cliente)
+
+        item = ItemPedido.objects.create(
+            pedido=pedido,
+            produto=produto,
+            quantidade=5,
+            tipo="ESTOQUE"
+        )
+
+        baixar_estoque(produto, 5, item)
+
+        # simula expiração
+        devolver_estoque(item)
+
+        lote.refresh_from_db()
+        self.assertEqual(lote.quantidade, 10)
+
+    def test_reativar_pedido_rebaixa_estoque(self):
+        cliente = Cliente.objects.create(nome="Cliente Teste")
+
+        produto = Produto.objects.create(
+            nome_produto="Produto Teste",
+            preco_unitario=10
+        )
+
+        lote = LoteProduto.objects.create(
+            produto=produto,
+            quantidade=10,
+            data_validade=date.today() + timedelta(days=10),
+            ativo=True
+        )
+
+        pedido = Pedido.objects.create(cliente=cliente)
+
+        item = ItemPedido.objects.create(
+            pedido=pedido,
+            produto=produto,
+            quantidade=5,
+            tipo="ESTOQUE"
+        )
+
+        baixar_estoque(produto, 5, item)
+
+        devolver_estoque(item)
+
+        # simula reativação
+        baixar_estoque(produto, 5, item)
+
+        lote.refresh_from_db()
+        self.assertEqual(lote.quantidade, 5)
+
+    def test_fluxo_completo_expira_reativa_expira(self):
+        cliente = Cliente.objects.create(nome="Cliente Teste")
+
+        produto = Produto.objects.create(
+            nome_produto="Produto Teste",
+            preco_unitario=10
+        )
+
+        lote = LoteProduto.objects.create(
+            produto=produto,
+            quantidade=10,
+            data_validade=date.today() + timedelta(days=10),
+            ativo=True
+        )
+
+        pedido = Pedido.objects.create(cliente=cliente)
+
+        item = ItemPedido.objects.create(
+            pedido=pedido,
+            produto=produto,
+            quantidade=5,
+            tipo="ESTOQUE"
+        )
+
+        # baixa
+        baixar_estoque(produto, 5, item)
+
+        # expira
+        devolver_estoque(item)
+
+        # reativa
+        baixar_estoque(produto, 5, item)
+
+        # expira de novo
+        devolver_estoque(item)
+
+        lote.refresh_from_db()
+        self.assertEqual(lote.quantidade, 10)

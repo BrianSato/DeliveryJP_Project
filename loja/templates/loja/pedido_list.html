@@ -16,6 +16,10 @@
     <a href="{% url 'pedido_create' %}" class="btn btn-sm btn-success">
         ➕ Novo Pedido
     </a>
+    <a href="?filtro=expirados"
+       class="btn {% if filtro == 'expirados' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+       ⚠️ Expirados
+    </a>
 
 </div>
 

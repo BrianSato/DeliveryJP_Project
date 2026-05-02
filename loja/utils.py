@@ -61,7 +61,7 @@ def devolver_estoque(item_pedido):
         lote.quantidade += registro.quantidade
         lote.save()
 
-    item_pedido._estoque_devolvido = True
+    item_pedido.lotes.all().delete()
 
 def devolver_parcial_estoque(item_pedido, quantidade):
     restante = quantidade
@@ -106,3 +106,18 @@ def processar_pedidos_expirados():
 
     for pedido in pedidos:
         processar_expiracao_pedido(pedido)
+
+def get_pedidos_para_analise():
+    from loja.models import Pedido
+
+    hoje = timezone.now().date()
+
+    pedidos = Pedido.objects.filter(
+        data_limite_pagamento__lt=hoje,
+        data_limite_pagamento__isnull=False
+    ).select_related('cliente').prefetch_related('itens')
+
+    return [
+        p for p in pedidos
+        if p.valor_pago > 0 and p.valor_pago < p.valor_total
+    ]

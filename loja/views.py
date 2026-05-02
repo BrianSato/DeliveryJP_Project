@@ -5,7 +5,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.utils import timezone
-from django.db.models import Q, Sum, OuterRef, Exists
+from django.db.models import Q, Sum, OuterRef, Exists, F
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
@@ -14,7 +14,7 @@ from django.contrib import messages
 from loja.forms import ClienteForm, ProdutoEstoqueForm
 from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
 from loja.utils import criar_lote, devolver_estoque, devolver_parcial_estoque, baixar_estoque, \
-    processar_expiracao_pedido
+    processar_expiracao_pedido, get_pedidos_para_analise
 
 
 #Tela de login personalizada
@@ -469,20 +469,36 @@ def pedido_create(request):
 #Lista de Pedidos
 @login_required
 def pedido_list(request):
-    pedidos_lista = Pedido.objects.all().order_by('-id')
+    hoje = timezone.now().date()
+
+    pedidos_lista = Pedido.objects.select_related('cliente').order_by('-id')
+
     query = request.GET.get('q')
+    filtro = request.GET.get('filtro')
+
+    # 🔎 BUSCA
     if query:
         pedidos_lista = pedidos_lista.filter(
             Q(cliente__nome__icontains=query) |
             Q(cliente__telefone__icontains=query)
         )
+
+    # 🔥 FILTRO DE EXPIRADOS
+    if filtro == 'expirados':
+        pedidos_lista = pedidos_lista.filter(
+            data_limite_pagamento__lt=hoje,
+            data_limite_pagamento__isnull=False
+        ).exclude(status='FECHADO')
+
+    # 📄 PAGINAÇÃO
     paginator = Paginator(pedidos_lista, 5)
     page_number = request.GET.get('page')
     pedidos = paginator.get_page(page_number)
 
-    return render(request,'loja/pedido_list.html',{
-        'pedidos':pedidos,
-        'query':query
+    return render(request, 'loja/pedido_list.html', {
+        'pedidos': pedidos,
+        'query': query,
+        'filtro': filtro,
     })
 #Detalhes do Pedido
 @login_required
@@ -624,7 +640,23 @@ def pedido_encomenda_detail(request, pedido_id):
         'pedido': pedido,
         'itens': itens
     })
+#Reativar pedido expirado
+def reativar_pedido(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
 
+    if pedido.status == 'EXPIRADO' and 0 < pedido.valor_pago < pedido.valor_total:
+
+        for item in pedido.itens.all():
+            if item.tipo == 'ESTOQUE' and item.produto:
+                baixar_estoque(item.produto, item.quantidade, item)
+
+        pedido.status = 'ABERTO'
+        pedido.data_limite_pagamento = date.today() + timedelta(days=3)
+
+        pedido.save()
+
+    return redirect('pedido_detail', pedido_id=pedido.id)
+#Editar ItemPedido
 @login_required
 def itempedido_editar(request, id):
     item = get_object_or_404(ItemPedido, id=id)
@@ -653,7 +685,7 @@ def itempedido_editar(request, id):
         item.save()
 
     return redirect('pedido_detail', pedido_id=pedido.id)
-
+#Apagar ItemPedido
 @login_required
 def itempedido_delete(request, id):
     item = get_object_or_404(ItemPedido, id=id)
@@ -673,3 +705,11 @@ def itempedido_delete(request, id):
         item.delete()
 
     return redirect('pedido_detail', pedido_id=pedido.id)
+#Pedido para Análise
+@login_required
+def pedidos_para_analise(request):
+    pedidos = get_pedidos_para_analise()
+
+    return render(request, 'loja/pedidos_para_analise.html', {
+        'pedidos': pedidos
+    })

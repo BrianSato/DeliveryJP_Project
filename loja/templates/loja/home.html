@@ -31,6 +31,18 @@
             </div>
         </div>
     {% endif %}
+    {% if pedidos_para_analise_count > 0 %}
+        <div class="mb-2">
+            <div class="alert alert-warning alert-custom d-flex justify-content-between align-items-center py-1 px-2 small">
+                <div>
+                 <strong> ⚠️ Pedidos para Análise: </strong>{{ pedidos_para_analise_count }}
+                </div>
+                <a href="{% url 'pedidos_para_analise' %}" class="btn btn-sm btn-outline-warning text-dark">
+                    Ver
+                </a>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- MENU PRINCIPAL -->
