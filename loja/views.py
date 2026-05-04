@@ -180,19 +180,19 @@ def cliente_reativar(request, cliente_id):
 @login_required
 def produto_create(request):
     if request.method == 'POST':
-            nome = request.POST.get('nome_produto')
-            preco = request.POST.get('preco_unitario')
+        nome = request.POST.get('nome_produto')
+        preco = request.POST.get('preco_unitario')
 
-            produto = Produto.objects.create(
-                nome_produto=nome,
-                preco_unitario=preco if preco else 0
-            )
+        produto = Produto.objects.create(
+            nome_produto=nome,
+            preco_unitario=preco if preco else 0
+        )
 
-            logger.info(
-                f"Produto criado | Nome: {produto.nome_produto} | Data: {timezone.now()}"
-            )
+        logger.info(
+            f"Produto criado | Nome: {produto.nome_produto} | Data: {timezone.now()}"
+        )
 
-            return redirect('produto_estoque_list')
+        return redirect('produto_estoque_list')
 
     return render(request,'loja/produto_create.html')
 #Produto Estoque Editar
