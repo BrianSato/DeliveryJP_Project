@@ -180,19 +180,25 @@ def cliente_reativar(request, cliente_id):
 @login_required
 def produto_create(request):
     if request.method == 'POST':
-        nome = request.POST.get('nome_produto')
-        preco = request.POST.get('preco_unitario')
+        try:
+            nome = request.POST.get('nome_produto')
+            preco = request.POST.get('preco_unitario')
 
-        #Cria e salva no banco
-        produto = Produto.objects.create(
-            nome_produto=nome,
-            preco_unitario=preco if preco else 0
-        )
+            produto = Produto.objects.create(
+                nome_produto=nome,
+                preco_unitario=preco if preco else 0
+            )
 
-        logger.info(
-            f"Produto criado | Nome: {produto.nome_produto} | Estoque: {produto.estoque} | Data: {timezone.now()}"
-        )
-        return redirect('produto_estoque_list')
+            logger.info(
+                f"Produto criado | Nome: {produto.nome_produto} | Data: {timezone.now()}"
+            )
+
+            return redirect('produto_estoque_list')
+
+        except Exception as e:
+            print("🔥 ERRO REAL:", e)
+            logger.error(f"Erro ao criar produto: {e}")
+            raise e  # mantém o erro pra ver no browser
 
     return render(request,'loja/produto_create.html')
 #Produto Estoque Editar
