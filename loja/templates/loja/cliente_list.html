@@ -1,19 +1,41 @@
 {% extends "loja/base.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Lista de Clientes{% endblock %}
+
 {% block container_class %}container-fluid px-4 py-3{% endblock %}
 
-
-{% block title %}Clientes{% endblock %}
+{% block logo %}{% endblock %}
 
 {% block content %}
+
+<!-- HEADER COM LOGO -->
+
+<div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
+
+    <!-- LOGO À ESQUERDA -->
+    <div>
+        <img src="{% static 'loja/img/logo.png' %}" style="max-width:120px;">
+    </div>
+
+    <!-- TÍTULO-->
+    <h3 class="mb-0">
+        {% if mostrar_inativos %}
+            Clientes Inativos
+        {% else %}
+            Clientes Ativos
+        {% endif %}
+    </h3>
+
+</div>
 
 <!-- HEADER -->
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
 
-    <h3 class="mb-0">Clientes</h3>
-
     <div class="d-flex flex-wrap align-items-center gap-2">
 
-        <a href="{% url 'cliente_create' %}" class="btn btn-sm btn-dark">
+        <a href="{% url 'cliente_create' %}" class="btn btn-sm btn-outline-primary">
             + Novo
         </a>
 
@@ -21,7 +43,7 @@
             Ativos
         </a>
 
-        <a href="{% url 'cliente_list' %}?inativos=1" class="btn btn-sm btn-outline-secondary">
+        <a href="{% url 'cliente_list' %}?inativos=1" class="btn btn-sm btn-outline-danger">
             Inativos
         </a>
 

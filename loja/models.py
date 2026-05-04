@@ -1,3 +1,4 @@
+from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -194,12 +195,11 @@ class Pedido(models.Model):
         ('TRANSFERENCIA', 'Transferência'),
     ]
     STATUS_ENCOMENDA = [
-        ('PENDENTE', 'Aguardando Pedido'),
-        ('PEDIDO', 'Pedido feito'),
-        ('CHEGOU', 'Produto chegou'),
+        ('PENDENTE', 'Aguardando'),
+        ('PEDIDO', 'Pedido'),
+        ('CHEGOU', 'Chegou'),
         ('ENVIADO', 'Enviado'),
-        ('ENTREGUE', 'Entregue ao cliente'),
-        ('CANCELADO', 'Cancelado')
+        ('ENTREGUE', 'Entregue '),
     ]
     STATUS_PEDIDO = [
         ('ABERTO', 'Aberto'),
@@ -330,18 +330,34 @@ class Pedido(models.Model):
         }
         return fluxo.get(self.status_encomenda,[])
 
-    def pode_mudar_para(self,novo_status):
-        #FLUXO BASE
+    def pode_mudar_para(self, novo_status):
+
         fluxo = self.proximo_status_permitido
 
-        #REGRA DE FLUXO
+        # não permite status fora do fluxo
         if novo_status not in fluxo:
             return False, "Transição inválida de status"
 
-        #REGRA DE PAGAMENTO
-        if self.valor_pago < self.valor_total:
-            if novo_status in ['ENVIADO','ENTREGUE']:
-                return False,"Pagamento ainda não foi concluido"
+        # REGRA 1: AGUARDANDO não pode mudar nada
+        if self.status_pagamento == 'AGUARDANDO':
+            return False, "Pagamento ainda não iniciado"
+
+        # REGRA 2: PARCIAL precisa de pelo menos 20%
+        if self.status_pagamento == 'PARCIAL':
+            if self.valor_total == 0:
+                return False, "Valor total inválido"
+
+            if self.valor_pago < (self.valor_total * Decimal('0.2')):
+                return False, "É necessário pagar pelo menos 20% para avançar o status"
+
+            # permitido apenas até CHEGOU
+            if novo_status not in ['PEDIDO', 'CHEGOU']:
+                return False, "Status não permitido com pagamento parcial"
+
+        # REGRA 3: PAGO
+        if self.status_pagamento == 'PAGO':
+            if novo_status not in ['ENVIADO', 'ENTREGUE']:
+                return False, "Status inválido para pedido pago"
 
         return True, ""
 

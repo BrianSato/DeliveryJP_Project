@@ -48,8 +48,6 @@ urlpatterns = [
     path('produtos/inativos/', views.produtos_inativos, name='produtos_inativos'),
     #lista de produtos no estoque
     path('produto/lista_estoque/', views.produto_estoque_list, name='produto_estoque_list'),
-    #lista de produtos encomendados
-    path('produto/lista_encomenda/', views.produto_encomenda_list, name='produto_encomenda_list'),
     #detalhes do produto
     path('produto/<int:id>/', views.produto_detail, name='produto_detail'),
     #criar lote do produto
@@ -66,6 +64,6 @@ urlpatterns = [
     path('item/<int:id>/editar/', views.itempedido_editar, name='itempedido_editar'),
     #apagar item de pedido
     path('item/<int:id>/deletar/', views.itempedido_delete, name='itempedido_delete'),
-    #detalhes da encomenda
-    path('pedido/encomenda/<int:pedido_id>/', views.pedido_encomenda_detail, name='pedido_encomenda_detail'),
+    #lista de pedidos encomenda
+    path('encomendas/', views.encomenda_list, name='encomenda_list')
 ]

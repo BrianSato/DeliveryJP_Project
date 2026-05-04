@@ -105,45 +105,41 @@
 
 </div>
 
-
 <!-- ITENS -->
-
 <div class="card shadow-sm mb-3">
     <div class="card-body">
 
-        <h6 class="mb-3">📦 Itens de Estoque</h6>
+        <!-- ================= ESTOQUE ================= -->
+        {% if estoque_itens %}
+            <h6 class="mb-3">📦 Itens de Estoque</h6>
 
-            {% for item in pedido.itens.all %}
-                {% if item.tipo == 'ESTOQUE' %}
+            {% for item in estoque_itens %}
                 <div class="border rounded p-2 mb-2 small">
                     <strong>{{ item }}</strong><br>
                     Quantidade: {{ item.quantidade }}
                 </div>
-                {% endif %}
-            {% empty %}
-            <p class="text-muted">Nenhum item de estoque</p>
             {% endfor %}
+        {% endif %}
 
-            <hr>
-        <h6 class="mb-3">📦 Itens de Encomenda</h6>
+        <!-- ================= ENCOMENDA ================= -->
+        {% if encomenda_itens %}
+            <h6 class="mb-3 mt-3">📑 Itens de Encomenda</h6>
 
-            {% for item in pedido.itens.all %}
-                {% if item.tipo == 'ENCOMENDA' %}
+            {% for item in encomenda_itens %}
                 <div class="border rounded p-2 mb-2 small">
                     <strong>{{ item.nome_produto }}</strong><br>
                     Quantidade: {{ item.quantidade }}<br>
-                    Valor: ¥{{ item.valor_unitario }}
                 </div>
-                {% endif %}
-            {% empty %}
-            <p class="text-muted">Nenhuma encomenda neste pedido</p>
-
             {% endfor %}
+        {% endif %}
+
+        <!-- ================= VAZIO ================= -->
+        {% if not estoque_itens and not encomenda_itens %}
+            <p class="text-muted">Nenhum item neste pedido</p>
+        {% endif %}
 
     </div>
-
 </div>
-
 {% if pedido.status == 'ABERTO' and pedido.status_pagamento != 'EXPIRADO' %}
 
 <div class="row g-3 align-items-stretch">

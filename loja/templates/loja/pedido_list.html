@@ -2,7 +2,7 @@
 {% load humanize %}
 {% load static %}
 
-{% block title %}Informações do Cliente{% endblock %}
+{% block title %}Lista de Pedidos{% endblock %}
 
 {% block container_class %}container-fluid px-4 py-3{% endblock %}
 
@@ -20,10 +20,17 @@
     </div>
 
     <!-- TÍTULO + NOME -->
-    <div class="text-end">
-        <h4 class="mb-1">Pedidos</h4>
-        <h5 class="text-muted mb-0">{{ cliente.nome }}</h5>
-    </div>
+    <h3 class="mb-0">
+        {% if filtro == 'estoque' %}
+            📦 Pedidos do Estoque
+        {% elif filtro == 'encomenda' %}
+            📑 Pedidos de Encomenda
+        {% elif filtro == 'expirados' %}
+            ⚠️ Pedidos Expirados
+        {% else %}
+            🧾 Todos os Pedidos
+        {% endif %}
+    </h3>
 
 </div>
 
@@ -42,7 +49,7 @@
             📦 Estoque
         </a>
 
-        <a href="{% url 'pedido_list' %}?filtro=encomenda"
+        <a href="{% url 'encomenda_list' %}"
            class="btn btn-outline-primary btn-sm">
             📑 Encomenda
         </a>
@@ -88,10 +95,9 @@
 
                         <!-- CLIENTE + DATA MOBILE -->
                         <td>
-                            <a href="{% url 'pedido_detail' pedido.id %}"
-                               class="text-decoration-none fw-bold">
+                            <div class="text-decoration-none fw-bold">
                                 {{ pedido.cliente.nome }}
-                            </a>
+                            </div>
 
                             <div class="d-md-none text-muted small">
                                 {{ pedido.data_pedido|date:"d/m/Y" }}
@@ -132,37 +138,40 @@
             </table>
         </div>
 
-        <!-- PAGINAÇÃO -->
         {% if pedidos.has_other_pages %}
-        <nav class="mt-3 px-2">
-            <ul class="pagination justify-content-center">
 
-                {% if pedidos.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="?page={{ pedidos.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">
-                            Anterior
-                        </a>
+            <nav class="mt-3 px-2">
+                <ul class="pagination justify-content-center">
+
+                    {% if pedidos.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ pedidos.previous_page_number }}{% if query %}&q={{ query }}{% endif %}
+                               {% if filtro %}&filtro={{ filtro }}{% endif %}">
+                                Anterior
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            {{ pedidos.number }} / {{ pedidos.paginator.num_pages }}
+                        </span>
                     </li>
-                {% endif %}
 
-                <li class="page-item active">
-                    <span class="page-link">
-                        {{ pedidos.number }} / {{ pedidos.paginator.num_pages }}
-                    </span>
-                </li>
+                    {% if pedidos.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ pedidos.next_page_number }}{% if query %}&q={{ query }}{% endif %}
+                               {% if filtro %}&filtro={{ filtro }}{% endif %}">
+                                Próxima
+                            </a>
+                        </li>
+                    {% endif %}
 
-                {% if pedidos.has_next %}
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="?page={{ pedidos.next_page_number }}{% if query %}&q={{ query }}{% endif %}">
-                            Próxima
-                        </a>
-                    </li>
-                {% endif %}
+                </ul>
+            </nav>
 
-            </ul>
-        </nav>
         {% endif %}
 
     </div>

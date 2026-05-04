@@ -321,53 +321,6 @@ def produto_estoque_list(request):
         'mostrar_inativos': mostrar_inativos,
     })
 #Lista de Produtos Encomendados
-@login_required
-def produto_encomenda_list(request):
-    query = request.GET.get('q')
-
-    # UPDATE STATUS
-    if request.method == 'POST':
-        pedido_id = request.POST.get('pedido_id')
-        novo_status = request.POST.get('status_encomenda')
-
-        if pedido_id and novo_status:
-            pedido = Pedido.objects.get(id=pedido_id)
-
-            if novo_status == 'PEDIDO' and pedido.status_pagamento != 'PARCIAL':
-                messages.error(request, 'Não é possível marcar como PEDIDO sem pagamento parcial.')
-                return redirect('produto_encomenda_list')
-
-            if novo_status == 'CHEGOU' and pedido.status_pagamento != 'PARCIAL':
-                messages.error(request, 'Não é possível marcar como CHEGOU sem pagamento parcial.')
-                return redirect('produto_encomenda_list')
-
-            if novo_status == 'ENTREGUE' and pedido.status_pagamento != 'PAGO':
-                messages.error(request, 'Não é possível marcar como ENTREGUE sem pagamento completo.')
-                return redirect('produto_encomenda_list')
-
-            pedido.status_encomenda = novo_status
-            pedido.save()
-
-            messages.success(request, 'Status atualizado com sucesso.')
-            return redirect('produto_encomenda_list')
-
-    itens_list = ItemPedido.objects.filter(tipo='ENCOMENDA').order_by('-id')
-
-    # FILTRO PELO NOME DO CLIENTE
-    if query:
-        if query:
-            itens_list = itens_list.filter(
-                Q(nome_produto__icontains=query)
-            )
-
-    paginator = Paginator(itens_list, 5)
-    page_number = request.GET.get('page')
-    itens = paginator.get_page(page_number)
-
-    return render(request, 'loja/produto_encomenda_list.html', {
-        'itens': itens,
-        'query': query
-    })
 #Detalhes do Produtos
 @login_required
 def produto_detail(request, id):
@@ -496,9 +449,7 @@ def pedido_create(request):
 @login_required
 def pedido_list(request):
     hoje = timezone.now().date()
-
     pedidos_lista = Pedido.objects.select_related('cliente').prefetch_related('itens').order_by('-id')
-
     query = request.GET.get('q')
     filtro = request.GET.get('filtro')
 
@@ -540,18 +491,46 @@ def pedido_list(request):
     })
 #Lista de Pedidos Encomenda
 def encomenda_list(request):
+
     query = request.GET.get('q')
 
     pedidos = Pedido.objects.prefetch_related('itens', 'cliente').filter(
         itens__tipo='ENCOMENDA'
     ).distinct().order_by('-id')
 
-    #  busca
+    # POST: atualizar status
+    if request.method == 'POST':
+        pedido_id = request.POST.get('pedido_id')
+        novo_status = request.POST.get('status_encomenda')
+
+        try:
+            pedido = Pedido.objects.get(id=pedido_id)
+
+            pode, msg = pedido.pode_mudar_para(novo_status)
+
+            if not pode:
+                messages.error(request, msg)
+            else:
+                pedido.status_encomenda = novo_status
+                pedido.save()
+                messages.success(request, "Status atualizado com sucesso")
+
+        except Pedido.DoesNotExist:
+            messages.error(request, "Pedido não encontrado")
+
+        return redirect('encomenda_list')
+
+    # filtro busca
     if query:
         pedidos = pedidos.filter(
             Q(cliente__nome__icontains=query) |
             Q(cliente__telefone__icontains=query)
         ).distinct()
+
+    # PAGINAÇÃO
+    paginator = Paginator(pedidos , 5)  # ajuste aqui se quiser
+    page_number = request.GET.get('page')
+    pedidos = paginator.get_page(page_number)
 
     return render(request, 'loja/encomenda_list.html', {
         'pedidos': pedidos,
@@ -563,6 +542,8 @@ def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
     processar_expiracao_pedido(pedido)
     editar_item_id = request.GET.get('editar_item')
+    estoque_itens = pedido.itens.filter(tipo='ESTOQUE')
+    encomenda_itens = pedido.itens.filter(tipo='ENCOMENDA')
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -667,33 +648,8 @@ def pedido_detail(request,pedido_id):
         'pedido': pedido,
         'produtos': produtos,
         'editar_item_id': editar_item_id,
-    })
-@login_required
-def pedido_encomenda_detail(request, pedido_id):
-    pedido = get_object_or_404(Pedido, id=pedido_id)
-    itens = pedido.itens.filter(tipo='ENCOMENDA')
-
-    if request.method == "POST":
-        novo_status = request.POST.get("status_encomenda")
-
-        if novo_status:
-            permitido, mensagem = pedido.pode_mudar_para(novo_status)
-
-            #  REGRA DE NEGÓCIO
-            if not permitido:
-                messages.error(request,mensagem)
-                return redirect('pedido_encomenda_detail', pedido_id=pedido_id)
-
-            pedido.status_encomenda = novo_status
-            pedido.save()
-
-            messages.success(request, "Status atualizado!")
-
-        return redirect('pedido_encomenda_detail', pedido_id=pedido.id)
-
-    return render(request, 'loja/pedido_encomenda_detail.html', {
-        'pedido': pedido,
-        'itens': itens
+        'estoque_itens': estoque_itens,
+        'encomenda_itens': encomenda_itens,
     })
 #Reativar pedido expirado
 def reativar_pedido(request, pedido_id):
@@ -747,14 +703,14 @@ def itempedido_delete(request, id):
     item = get_object_or_404(ItemPedido, id=id)
     pedido = item.pedido
 
-    # 🔒 regra de negócio
+    #  regra de negócio
     if pedido.status != 'ABERTO':
         messages.error(request, "Pedido não pode ser alterado.")
         return redirect('pedido_detail', pedido_id=pedido.id)
 
     if request.method == 'POST':
 
-        # 🔥 DEVOLVER AO ESTOQUE (SE FOR PRODUTO DE ESTOQUE)
+        # DEVOLVER AO ESTOQUE (SE FOR PRODUTO DE ESTOQUE)
         if item.tipo == 'ESTOQUE':
             devolver_estoque(item)
 

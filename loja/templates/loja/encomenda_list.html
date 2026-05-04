@@ -1,62 +1,201 @@
-{% extends 'base.html' %}
+{% extends "loja/base.html" %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}Lista de Encomendas{% endblock %}
+
+{% block container_class %}container-fluid px-4 py-3{% endblock %}
+
+{% block logo %}{% endblock %}
 
 {% block content %}
 
-<h2>Pedidos de Encomenda</h2>
+<!-- HEADER COM LOGO -->
 
+<div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
+
+    <!-- LOGO À ESQUERDA -->
+    <div>
+        <img src="{% static 'loja/img/logo.png' %}" style="max-width:120px;">
+    </div>
+
+    <!-- TÍTULO + NOME -->
+    <div class="text-end">
+        <h4 class="mb-1">Pedidos Encomendados</h4>
+        <h5 class="text-muted mb-0">{{ cliente.nome }}</h5>
+    </div>
+
+</div>
+<!-- HEADER -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
+
+    <!-- AÇÕES PRINCIPAIS -->
+    <div class="d-flex flex-wrap gap-2">
+
+        <a href="{% url 'pedido_create' %}" class="btn btn-outline-primary btn-sm">
+            ➕ Novo
+        </a>
+
+        <a href="{% url 'pedido_list' %}?filtro=estoque"
+           class="btn btn-outline-primary btn-sm">
+            📦 Estoque
+        </a>
+
+        <a href="{% url 'encomenda_list' %}"
+           class="btn btn-outline-primary btn-sm">
+            📑 Encomenda
+        </a>
+
+        <a href="{% url 'pedido_list' %}?filtro=expirados"
+           class="btn btn-sm {% if filtro == 'expirados' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+            ⚠️ Expirados
+        </a>
+
+    </div>
+
+</div>
 <!-- BUSCA -->
-<form method="get">
-    <input type="text" name="q" placeholder="Buscar cliente..." value="{{ query }}">
-    <button type="submit">Buscar</button>
+<form method="GET" class="mb-3">
+    <input type="text"
+           name="q"
+           value="{{ query|default:'' }}"
+           class="form-control"
+           placeholder="Buscar cliente...">
 </form>
 
-<hr>
+<!-- TABELA -->
+<div class="card shadow-sm w-100">
+    <div class="card-body p-0">
 
-{% if pedidos %}
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0 align-middle">
 
-    {% for pedido in pedidos %}
+                <thead class="table-dark">
+                    <tr>
+                        <th>Cliente</th>
+                        <th class="text-center">Pagamento</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Ações</th>
+                    </tr>
+                </thead>
 
-        <div class="card" style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc;">
+                <tbody>
 
-            <h3>Cliente: {{ pedido.cliente.nome }}</h3>
+                {% for pedido in pedidos %}
 
-            <p><strong>Telefone:</strong> {{ pedido.cliente.telefone }}</p>
+                    <tr>
 
-            <p><strong>Status Encomenda:</strong> {{ pedido.status_encomenda }}</p>
+                        <!-- Cliente -->
+                        <td>
+                            <strong>{{ pedido.cliente.nome }}</strong><br>
+                        </td>
 
-            <p><strong>Status Pagamento:</strong> {{ pedido.status_pagamento }}</p>
+                        <!-- Pagamento -->
+                        <td class="text-center">
+                            {% if pedido.status_pagamento == "AGUARDANDO" %}
+                                <span class="badge bg-danger">Aguardando</span>
+                            {% elif pedido.status_pagamento == "PARCIAL" %}
+                                <span class="badge bg-warning text-dark">Parcial</span>
+                            {% elif pedido.status_pagamento == "PAGO" %}
+                                <span class="badge bg-success">Pago</span>
+                            {% endif %}
+                        </td>
 
-            <p><strong>Status Pedido:</strong> {{ pedido.status }}</p>
+                        <!-- Status encomenda (EDITÁVEL) -->
+                        <td class="text-center">
 
-            <p><strong>Valor Total:</strong> R$ {{ pedido.valor_total }}</p>
+                            <form method="POST">
+                                {% csrf_token %}
 
-            <p><strong>Valor Pago:</strong> R$ {{ pedido.valor_pago }}</p>
+                                <input type="hidden" name="pedido_id" value="{{ pedido.id }}">
 
-            <!-- RESUMO DOS ITENS -->
-            <h4>Itens de Encomenda:</h4>
+                                <select name="status_encomenda"
+                                        class="form-select form-select-sm"
+                                        onchange="this.form.submit()">
 
-            <ul>
-                {% for item in pedido.itens.all %}
-                    {% if item.tipo == 'ENCOMENDA' %}
-                        <li>
-                            {{ item.nome_produto }} - {{ item.quantidade }}x
-                            (R$ {{ item.valor_unitario }})
-                        </li>
-                    {% endif %}
+                                    {% for key, value in pedido.STATUS_ENCOMENDA %}
+                                        <option value="{{ key }}"
+                                            {% if pedido.status_encomenda == key %}selected{% endif %}>
+                                            {{ value }}
+                                        </option>
+                                    {% endfor %}
+
+                                </select>
+
+                            </form>
+
+                        </td>
+
+                        <!-- AÇÕES -->
+                        <td class="text-center">
+
+                            <a href="{% url 'pedido_detail' pedido.id %}"
+                               class="btn btn-sm btn-outline-primary">
+                                🔍
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center p-4">
+                            Nenhuma encomenda encontrada
+                        </td>
+                    </tr>
                 {% endfor %}
-            </ul>
 
-            <!-- AÇÃO -->
-            <a href="{% url 'pedido_detail' pedido.id %}">
-                Ver detalhes do pedido
-            </a>
+                </tbody>
 
+            </table>
         </div>
+        <!-- PAGINAÇÃO -->
+        {% if pedidos.has_other_pages %}
+        <nav class="mt-3 px-2">
+            <ul class="pagination justify-content-center">
 
-    {% endfor %}
+                {% if pedidos.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ pedidos.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">
+                            Anterior
+                        </a>
+                    </li>
+                {% endif %}
 
-{% else %}
-    <p>Nenhum pedido de encomenda encontrado.</p>
-{% endif %}
+                <li class="page-item active">
+                    <span class="page-link">
+                        {{ pedidos.number }} / {{ pedidos.paginator.num_pages }}
+                    </span>
+                </li>
+
+                {% if pedidos.has_next %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ pedidos.next_page_number }}{% if query %}&q={{ query }}{% endif %}">
+                            Próxima
+                        </a>
+                    </li>
+                {% endif %}
+
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- NAVEGAÇÃO -->
+<div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
+
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+        ← Voltar
+    </a>
+
+    <a href="{% url 'home' %}" class="btn btn-outline-primary btn-sm">
+        🏠 Menu Inicial
+    </a>
+
+</div>
 
 {% endblock %}

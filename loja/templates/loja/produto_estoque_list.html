@@ -1,32 +1,45 @@
 {% extends "loja/base.html" %}
 {% load humanize %}
+{% load static %}
 
-{% block title %}Produtos{% endblock %}
+{% block title %}Produto em Estoque{% endblock %}
 
 {% block container_class %}container-fluid px-4 py-3{% endblock %}
 
+{% block logo %}{% endblock %}
+
 {% block content %}
+
+<!-- HEADER COM LOGO -->
+
+<div class="d-flex align-items-center justify-content-between flex-wrap mb-4">
+
+    <!-- LOGO À ESQUERDA -->
+    <div>
+        <img src="{% static 'loja/img/logo.png' %}" style="max-width:120px;">
+    </div>
+
+    <!-- TÍTULO + NOME -->
+    <div class="text-end">
+        <h3 class="mb-1">Produtos em Estoque</h3>
+    </div>
+
+</div>
 
 <!-- HEADER -->
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
 
-    <h3 class="mb-0">Produtos em Estoque</h3>
-
     <div class="d-flex flex-wrap gap-2">
 
-        <a href="{% url 'produto_create' %}" class="btn btn-sm btn-dark">
+        <a href="{% url 'produto_create' %}" class="btn btn-sm btn-outline-primary">
             + Novo
         </a>
 
         <a href="{% url 'produto_estoque_list' %}" class="btn btn-sm btn-outline-primary">
-            Estoque
+            Ativos
         </a>
 
-        <a href="{% url 'produto_encomenda_list' %}" class="btn btn-sm btn-outline-secondary">
-            Encomenda
-        </a>
-
-        <a href="{% url 'produtos_inativos' %}" class="btn btn-sm btn-outline-secondary">
+        <a href="{% url 'produtos_inativos' %}" class="btn btn-sm btn-outline-danger">
             Inativos
         </a>
 
