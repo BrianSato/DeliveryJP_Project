@@ -180,7 +180,6 @@ def cliente_reativar(request, cliente_id):
 @login_required
 def produto_create(request):
     if request.method == 'POST':
-        try:
             nome = request.POST.get('nome_produto')
             preco = request.POST.get('preco_unitario')
 
