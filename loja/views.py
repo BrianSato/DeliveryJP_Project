@@ -195,11 +195,6 @@ def produto_create(request):
 
             return redirect('produto_estoque_list')
 
-        except Exception as e:
-            print("🔥 ERRO REAL:", e)
-            logger.error(f"Erro ao criar produto: {e}")
-            raise e  # mantém o erro pra ver no browser
-
     return render(request,'loja/produto_create.html')
 #Produto Estoque Editar
 @login_required
@@ -537,7 +532,6 @@ def pedido_list(request):
 def pedido_detail(request,pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
     processar_expiracao_pedido(pedido)
-    print(">>> PROCESSANDO EXPIRAÇÃO NO DETAIL")
     editar_item_id = request.GET.get('editar_item')
 
     if request.method == 'POST':
@@ -632,7 +626,6 @@ def pedido_detail(request,pedido_id):
                     pedido.save()  # AQUI CHAMA O CLEAN() DO MODEL
 
                 except ValidationError as e:
-                    print('ERRO AO FINALIZAR:',e.messages)
                     messages.error(request, ', '.join(e.messages))
                     return redirect('pedido_detail', pedido_id=pedido.id)
 
