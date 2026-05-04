@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import date, timedelta
 from decimal import Decimal
@@ -13,9 +14,10 @@ from django.contrib import messages
 
 from loja.forms import ClienteForm, ProdutoEstoqueForm
 from loja.models import Cliente, Produto, LoteProduto, Pedido, ItemPedido
-from loja.utils import criar_lote, devolver_estoque, devolver_parcial_estoque, baixar_estoque, \
+from loja.utils import criar_lote, devolver_estoque, baixar_estoque, \
     processar_expiracao_pedido, get_pedidos_para_analise
 
+logger = logging.getLogger(__name__)
 
 #Tela de login personalizada
 class MyloginView(LoginView):
@@ -87,7 +89,11 @@ def cliente_create(request):
             })
 
         #Cria e salva no banco
-        Cliente.objects.create(nome=nome,telefone=telefone_limpo,endereco=endereco)
+        cliente = Cliente.objects.create(nome=nome,telefone=telefone_limpo,endereco=endereco)
+
+        logger.info(
+            f"Cliente criado | Nome: {cliente.nome} | Data: {timezone.now()}"
+        )
 
         return redirect('cliente_list')
 
@@ -178,11 +184,14 @@ def produto_create(request):
         preco = request.POST.get('preco_unitario')
 
         #Cria e salva no banco
-        Produto.objects.create(
+        produto = Produto.objects.create(
             nome_produto=nome,
             preco_unitario=preco if preco else 0
         )
 
+        logger.info(
+            f"Produto criado | Nome: {produto.nome} | Estoque: {produto.estoque} | Data: {timezone.now()}"
+        )
         return redirect('produto_estoque_list')
 
     return render(request,'loja/produto_create.html')
@@ -198,8 +207,13 @@ def produto_estoque_update(request, produto_id):
             form.save()
             messages.success(request, 'Produto atualizado com sucesso.')
             return redirect('produto_estoque_list')
+        logger.info(
+            f"Produto atualizado | Nome: {produto.nome} | Estoque: {produto.estoque} | Data: {timezone.now()}"
+        )
     else:
         form = ProdutoEstoqueForm(instance=produto)
+
+
 
     return render(request, 'loja/produto_estoque_form.html', {
         'form': form,
@@ -215,6 +229,10 @@ def produto_estoque_delete(request, produto_id):
         produto.save()
         messages.success(request, 'Produto desativado com sucesso.')
 
+        logger.info(
+            f"Produto desativado | Nome: {produto.nome} | Estoque: {produto.estoque} | Data: {timezone.now()}"
+        )
+
     return redirect('produto_estoque_list')
 #Produto Estoque Reativar
 @login_required
@@ -225,6 +243,10 @@ def produto_estoque_reativar(request, produto_id):
         produto.ativo = True
         produto.save()
         messages.success(request, 'Produto reativado com sucesso.')
+
+        logger.info(
+            f"Produto reativado | Nome: {produto.nome} | Estoque: {produto.estoque} | Data: {timezone.now()}"
+        )
 
     return redirect('produto_estoque_list')
 #Lista de produtos inativos
@@ -254,22 +276,22 @@ def produto_estoque_list(request):
     filtro = request.GET.get('filtro', '')
     mostrar_inativos = request.GET.get('inativos')
 
-    # 🔥 BASE QUERY
+    # BASE QUERY
     produtos_list = Produto.objects.all().order_by('-id')
 
-    # ✅ FILTRO ATIVO / INATIVO
+    # FILTRO ATIVO / INATIVO
     if mostrar_inativos:
         produtos_list = produtos_list.filter(ativo=False)
     else:
         produtos_list = produtos_list.filter(ativo=True)
 
-    # 🔍 BUSCA
+    # BUSCA
     if query:
         produtos_list = produtos_list.filter(
             Q(nome_produto__icontains=query)
         )
 
-    # 🔥 SUBQUERY PARA VENCIDOS
+    # SUBQUERY PARA VENCIDOS
     lotes_vencidos = LoteProduto.objects.filter(
         produto=OuterRef('pk'),
         data_validade__lt=hoje,
@@ -280,14 +302,14 @@ def produto_estoque_list(request):
         tem_vencido=Exists(lotes_vencidos)
     )
 
-    # 🔥 FILTROS (validos / vencidos)
+    # FILTROS (validos / vencidos)
     if filtro == 'validos':
         produtos_list = produtos_list.filter(tem_vencido=False)
 
     elif filtro == 'vencidos':
         produtos_list = produtos_list.filter(tem_vencido=True)
 
-    # 📄 PAGINAÇÃO
+    # PAGINAÇÃO
     paginator = Paginator(produtos_list, 5)
     page_number = request.GET.get('page')
     produtos = paginator.get_page(page_number)
@@ -303,7 +325,7 @@ def produto_estoque_list(request):
 def produto_encomenda_list(request):
     query = request.GET.get('q')
 
-    # 🔥 UPDATE STATUS
+    # UPDATE STATUS
     if request.method == 'POST':
         pedido_id = request.POST.get('pedido_id')
         novo_status = request.POST.get('status_encomenda')
@@ -329,10 +351,9 @@ def produto_encomenda_list(request):
             messages.success(request, 'Status atualizado com sucesso.')
             return redirect('produto_encomenda_list')
 
-    # 🔥 BASE CORRETA (ItemPedido)
     itens_list = ItemPedido.objects.filter(tipo='ENCOMENDA').order_by('-id')
 
-    # 🔍 FILTRO PELO NOME DO CLIENTE
+    # FILTRO PELO NOME DO CLIENTE
     if query:
         if query:
             itens_list = itens_list.filter(
@@ -381,7 +402,7 @@ def produto_detail(request, id):
         ativo=False
     )
 
-    # MAPA DE FILTROS (mais escalável 🔥)
+    # MAPA DE FILTROS
     mapa_filtros = {
         'ativos': lotes_ativos,
         'vencidos': lotes_vencidos,
@@ -391,7 +412,6 @@ def produto_detail(request, id):
 
     lotes = mapa_filtros.get(filtro, lotes_ativos).order_by('data_validade')
 
-    # FLAG IMPORTANTE 👇
     modo_inativos = filtro == 'inativos'
 
     # TÍTULO DINÂMICO
@@ -439,6 +459,10 @@ def lote_create(request,produto_id):
         if quantidade:
             criar_lote(produto,quantidade,data_validade)
 
+            logger.info(
+                f"[LOTE] criado| Nome: {produto.nome} | Estoque: {produto.estoque} | Data: {timezone.now()}"
+            )
+
         return redirect('produto_detail',id= produto_id)
 
     return render(request,'loja/lote_create.html',{
@@ -459,6 +483,8 @@ def pedido_create(request):
         cliente= Cliente.objects.get(id=cliente_id)
         pedido = Pedido.objects.create(cliente=cliente)
 
+        logger.info(f"Pedido criado | ID: {pedido.id} | Data: {timezone.now()}")
+
         return redirect('pedido_detail', pedido_id= pedido.id)
 
     clientes = Cliente.objects.all()
@@ -476,14 +502,14 @@ def pedido_list(request):
     query = request.GET.get('q')
     filtro = request.GET.get('filtro')
 
-    # 🔎 BUSCA
+    #  BUSCA
     if query:
         pedidos_lista = pedidos_lista.filter(
             Q(cliente__nome__icontains=query) |
             Q(cliente__telefone__icontains=query)
         )
 
-    # 🔥 FILTRO DE EXPIRADOS
+    # FILTRO DE EXPIRADOS
     if filtro == 'expirados':
         pedidos_lista = pedidos_lista.filter(
             data_limite_pagamento__lt=hoje,
@@ -654,6 +680,7 @@ def reativar_pedido(request, pedido_id):
         pedido.data_limite_pagamento = date.today() + timedelta(days=3)
 
         pedido.save()
+        logger.info(f"Pedido reativado! | ID: {pedido.id} | Data: {timezone.now()}")
 
     return redirect('pedido_detail', pedido_id=pedido.id)
 #Editar ItemPedido
@@ -671,16 +698,16 @@ def itempedido_editar(request, id):
 
         if item.tipo == 'ESTOQUE':
 
-            # 🔥 1. DEVOLVE TUDO
+            # 1. DEVOLVE TUDO
             devolver_estoque(item)
 
-            # 🔥 2. APAGA RELAÇÃO COM LOTES
+            # 2. APAGA RELAÇÃO COM LOTES
             item.lotes.all().delete()
 
-            # 🔥 3. BAIXA NOVAMENTE COM NOVA QUANTIDADE
+            # 3. BAIXA NOVAMENTE COM NOVA QUANTIDADE
             baixar_estoque(item.produto, nova_qtd, item)
 
-        # ✔ atualiza quantidade
+        # atualiza quantidade
         item.quantidade = nova_qtd
         item.save()
 
