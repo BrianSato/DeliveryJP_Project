@@ -497,26 +497,38 @@ def pedido_create(request):
 def pedido_list(request):
     hoje = timezone.now().date()
 
-    pedidos_lista = Pedido.objects.select_related('cliente').order_by('-id')
+    pedidos_lista = Pedido.objects.select_related('cliente').prefetch_related('itens').order_by('-id')
 
     query = request.GET.get('q')
     filtro = request.GET.get('filtro')
 
-    #  BUSCA
+    # BUSCA
     if query:
         pedidos_lista = pedidos_lista.filter(
             Q(cliente__nome__icontains=query) |
             Q(cliente__telefone__icontains=query)
         )
 
-    # FILTRO DE EXPIRADOS
-    if filtro == 'expirados':
+    # FILTRO POR TIPO DO ITEM
+
+    if filtro == 'estoque':
+        pedidos_lista = pedidos_lista.filter(
+            itens__tipo='ESTOQUE'
+        ).distinct()
+
+    elif filtro == 'encomenda':
+        pedidos_lista = pedidos_lista.filter(
+            itens__tipo='ENCOMENDA'
+        ).distinct()
+
+    #  EXPIRADOS
+    elif filtro == 'expirados':
         pedidos_lista = pedidos_lista.filter(
             data_limite_pagamento__lt=hoje,
             data_limite_pagamento__isnull=False
         ).exclude(status='FECHADO')
 
-    # 📄 PAGINAÇÃO
+    # PAGINAÇÃO
     paginator = Paginator(pedidos_lista, 5)
     page_number = request.GET.get('page')
     pedidos = paginator.get_page(page_number)
@@ -525,6 +537,25 @@ def pedido_list(request):
         'pedidos': pedidos,
         'query': query,
         'filtro': filtro,
+    })
+#Lista de Pedidos Encomenda
+def encomenda_list(request):
+    query = request.GET.get('q')
+
+    pedidos = Pedido.objects.prefetch_related('itens', 'cliente').filter(
+        itens__tipo='ENCOMENDA'
+    ).distinct().order_by('-id')
+
+    #  busca
+    if query:
+        pedidos = pedidos.filter(
+            Q(cliente__nome__icontains=query) |
+            Q(cliente__telefone__icontains=query)
+        ).distinct()
+
+    return render(request, 'loja/encomenda_list.html', {
+        'pedidos': pedidos,
+        'query': query,
     })
 #Detalhes do Pedido
 @login_required
@@ -563,7 +594,7 @@ def pedido_detail(request,pedido_id):
                         pedido=pedido,
                         nome_produto=request.POST.get('nome_produto'),
                         quantidade=quantidade,
-                        valor_unitario=request.POST.get('valor_unitario'),
+                        valor_unitario = Decimal(request.POST.get('valor_unitario') or 0),
                         tipo=tipo
                     )
 

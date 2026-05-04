@@ -111,68 +111,36 @@
 <div class="card shadow-sm mb-3">
     <div class="card-body">
 
-    <h6 class="mb-3">📦 Itens</h6>
+        <h6 class="mb-3">📦 Itens de Estoque</h6>
 
-    {% for item in pedido.itens.all %}
-    <div class="border rounded p-2 mb-2 small">
-
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
-
-            <div>
-                <strong>{{ item }}</strong><br>
-
-                {% if editar_item_id == item.id|stringformat:"s" %}
-                <form method="POST"
-                      action="{% url 'itempedido_editar' item.id %}"
-                      class="d-flex gap-2 mt-2 flex-wrap">
-
-                    {% csrf_token %}
-
-                    <input type="number"
-                           name="quantidade"
-                           value="{{ item.quantidade }}"
-                           class="form-control form-control-sm"
-                           style="width: 80px;">
-
-                    <button class="btn btn-sm btn-success">💾</button>
-
-                    <a href="{% url 'pedido_detail' pedido_id=pedido.id %}"
-                       class="btn btn-sm btn-outline-secondary">
-                        Cancelar
-                    </a>
-                </form>
-                {% else %}
+            {% for item in pedido.itens.all %}
+                {% if item.tipo == 'ESTOQUE' %}
+                <div class="border rounded p-2 mb-2 small">
+                    <strong>{{ item }}</strong><br>
                     Quantidade: {{ item.quantidade }}
+                </div>
                 {% endif %}
-            </div>
+            {% empty %}
+            <p class="text-muted">Nenhum item de estoque</p>
+            {% endfor %}
 
-            {% if pedido.status == 'ABERTO' and editar_item_id != item.id|stringformat:"s" %}
-            <div class="d-flex gap-2 mt-2">
+            <hr>
+        <h6 class="mb-3">📦 Itens de Encomenda</h6>
 
-                <a href="?editar_item={{ item.id }}"
-                   class="btn btn-sm btn-outline-primary">✏️</a>
+            {% for item in pedido.itens.all %}
+                {% if item.tipo == 'ENCOMENDA' %}
+                <div class="border rounded p-2 mb-2 small">
+                    <strong>{{ item.nome_produto }}</strong><br>
+                    Quantidade: {{ item.quantidade }}<br>
+                    Valor: ¥{{ item.valor_unitario }}
+                </div>
+                {% endif %}
+            {% empty %}
+            <p class="text-muted">Nenhuma encomenda neste pedido</p>
 
-                <form method="POST"
-                      action="{% url 'itempedido_delete' item.id %}"
-                      onsubmit="return confirm('Remover este item?')">
-
-                    {% csrf_token %}
-                    <button class="btn btn-sm btn-outline-danger">🗑️</button>
-                </form>
-
-            </div>
-            {% endif %}
-
-        </div>
+            {% endfor %}
 
     </div>
-    {% empty %}
-    <div class="alert alert-secondary text-center">
-        Nenhum item no pedido
-    </div>
-    {% endfor %}
-
-</div>
 
 </div>
 

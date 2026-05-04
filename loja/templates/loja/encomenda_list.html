@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Pedidos de Encomenda</h2>
+
+<!-- BUSCA -->
+<form method="get">
+    <input type="text" name="q" placeholder="Buscar cliente..." value="{{ query }}">
+    <button type="submit">Buscar</button>
+</form>
+
+<hr>
+
+{% if pedidos %}
+
+    {% for pedido in pedidos %}
+
+        <div class="card" style="margin-bottom: 15px; padding: 10px; border: 1px solid #ccc;">
+
+            <h3>Cliente: {{ pedido.cliente.nome }}</h3>
+
+            <p><strong>Telefone:</strong> {{ pedido.cliente.telefone }}</p>
+
+            <p><strong>Status Encomenda:</strong> {{ pedido.status_encomenda }}</p>
+
+            <p><strong>Status Pagamento:</strong> {{ pedido.status_pagamento }}</p>
+
+            <p><strong>Status Pedido:</strong> {{ pedido.status }}</p>
+
+            <p><strong>Valor Total:</strong> R$ {{ pedido.valor_total }}</p>
+
+            <p><strong>Valor Pago:</strong> R$ {{ pedido.valor_pago }}</p>
+
+            <!-- RESUMO DOS ITENS -->
+            <h4>Itens de Encomenda:</h4>
+
+            <ul>
+                {% for item in pedido.itens.all %}
+                    {% if item.tipo == 'ENCOMENDA' %}
+                        <li>
+                            {{ item.nome_produto }} - {{ item.quantidade }}x
+                            (R$ {{ item.valor_unitario }})
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+
+            <!-- AÇÃO -->
+            <a href="{% url 'pedido_detail' pedido.id %}">
+                Ver detalhes do pedido
+            </a>
+
+        </div>
+
+    {% endfor %}
+
+{% else %}
+    <p>Nenhum pedido de encomenda encontrado.</p>
+{% endif %}
+
+{% endblock %}
