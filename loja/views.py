@@ -466,7 +466,7 @@ def lote_create(request,produto_id):
             criar_lote(produto,quantidade,data_validade)
 
             logger.info(
-                f"[LOTE] criado| Nome: {produto.nome_produto} | Estoque: {produto.estoque} | Data: {timezone.now()}"
+                f"[LOTE] criado| Nome: {produto.nome_produto} | Data: {timezone.now()}"
             )
 
         return redirect('produto_detail',id= produto_id)
