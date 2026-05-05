@@ -305,17 +305,16 @@ class Pedido(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()  # GARANTE VALIDAÇÃO SEMPRE
+        self.atualizar_data_limite()
         super().save(*args, **kwargs)
 
     def atualizar_data_limite(self):
         if self.valor_pago == 0:
-            self.data_limite_pagamento = date.today() + timedelta(days=1)
+            self.data_limite_pagamento = date.today() + timedelta(days=3)
         elif self.valor_pago < self.valor_total:
-            self.data_limite_pagamento = date.today() + timedelta(days=5)
+            self.data_limite_pagamento = date.today() + timedelta(days=7)
         else:
             self.data_limite_pagamento = None
-
-        self.save(update_fields=['data_limite_pagamento'])
     def __str__(self):
         return f'Pedido:{self.cliente}'
 
@@ -356,8 +355,7 @@ class Pedido(models.Model):
 
         # REGRA 3: PAGO
         if self.status_pagamento == 'PAGO':
-            if novo_status not in ['ENVIADO', 'ENTREGUE']:
-                return False, "Status inválido para pedido pago"
+            return True,""
 
         return True, ""
 
