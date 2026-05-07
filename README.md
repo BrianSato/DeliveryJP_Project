@@ -10,7 +10,7 @@ O projeto foi desenvolvido com foco em boas práticas de desenvolvimento backend
 
 Demonstração completa do fluxo de pedidos, controle de estoque por lote, integração entre módulos e gerenciamento de encomendas.
 
-[![Assista ao vídeo](https://img.youtube.com/vi/cn1a08gz9YQ/0.jpg)](https://www.youtube.com/watch?v=cn1a08gz9YQ)
+[![Assista ao vídeo](https://img.youtube.com/vi/Ywl3XgbpXKU/0.jpg)](https://www.youtube.com/watch?v=Ywl3XgbpXKU)
 
 ---
 
