@@ -28,6 +28,4 @@ END
 
 echo "Starting server..."
 
-python manage.py check
-
 gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
